@@ -1,0 +1,11 @@
+idf_component_register(
+    SRCS 
+        "main.cpp"
+        "UI.cpp"
+    INCLUDE_DIRS 
+        "."
+    REQUIRES 
+        touch_display
+        event_bus
+        wifi_manager
+)

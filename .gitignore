@@ -1,0 +1,32 @@
+# ESP-IDF build output
+build/
+sdkconfig.old
+dependencies.lock
+
+# Python
+*.pyc
+__pycache__/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+managed_components/
+
+# Custom sdkconfig 
+# sdkconfig
+
+# Debug files
+*.log
+*.elf
+*.map
+
+# Flash download tool
+flash_download_tool_*.zip

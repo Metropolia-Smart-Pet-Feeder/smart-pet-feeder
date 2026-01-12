@@ -1,0 +1,18 @@
+idf_component_register(
+    SRCS 
+        "src/Display.cpp"
+        "src/SPIBus.cpp"
+        "src/I2CBus.cpp"
+        "src/TouchDriver.cpp"
+        "src/LVGLManager.cpp"
+    INCLUDE_DIRS 
+        "include"
+    REQUIRES 
+        driver 
+        esp_lcd
+        esp_lcd_ili9341
+        esp_lcd_touch_ft5x06
+        lvgl
+        esp_timer 
+        freertos
+)
