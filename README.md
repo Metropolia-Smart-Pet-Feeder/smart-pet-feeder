@@ -1,5 +1,5 @@
 # Display and Network Components
-This document is for explaining how the display and network features are implemented. I also included a wrapper of esp idf event loop for signaling events between tasks. We can consider using this for the whole project. I will briefly introduce all three components.
+This document is for explaining how the display and network features are implemented. I will briefly introduce all three components. One important note: I increased the app partition from 1mb to 3mb "single factory app (large)".
 
 ## Display
 1. SPIBus: Basic spi bus configurations. DMA is enabled for pixel data transmission. This need to be improved for connecting more SPI device on the same bus.
