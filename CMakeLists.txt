@@ -5,7 +5,7 @@ set(IDF_TARGET "esp32s3")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 #idf_build_set_property(MINIMAL_BUILD ON)
-project(TCA9555)
+project(HX711)
 
 # add other components
 set(EXTRA_COMPONENT_DIRS "components")
