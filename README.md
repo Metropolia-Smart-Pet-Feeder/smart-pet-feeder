@@ -1,4 +1,4 @@
-[GPIO_Expander_TCA9555](components/GPIO_Expander)
+[hx711](components/hx711) weight sensor library for ESP-IDF.
 
 
-See code comments for details. [TCA9555.h](components/GPIO_Expander/include/TCA9555.h)
+See code comments for details. [HX711.h](components/hx711/include/HX711.h)
