@@ -181,7 +181,7 @@ void UI::onFeedNowClicked(lv_event_t* event)
     
     UI* ui = (UI*)lv_event_get_user_data(event);
     if (ui) {
-        ui->event_bus->publish(EVENT_FEED_NOW_CLICKED);
+        ui->event_bus->publish(EVENT_FEED_NOW_PRESSED);
         ui->showFeedingScreen();
     }
 }

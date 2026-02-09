@@ -8,4 +8,6 @@ idf_component_register(
         touch_display
         event_bus
         wifi_manager
+        mqtt_manager
+        peripherals
 )

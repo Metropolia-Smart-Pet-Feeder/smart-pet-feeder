@@ -10,21 +10,23 @@
 #include "EventBus.h"
 #include "Events.h"
 #include "WiFiManager.h"
+#include "MQTTManager.h"
+#include "hivemq_ca.h"  
 #include <memory>
 
 static const char* TAG = "main";
 
-// Event callback functions
-static void onFeedNowEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+static void onMQTTMessageReceived(void* arg, esp_event_base_t base, int32_t id, void* data)
 {
-    ESP_LOGI("EVENT_TEST", "FEED NOW event received in main!");
+    auto* msg = static_cast<mqtt_message_data_t*>(data);
+    ESP_LOGI(TAG, "MQTT Message - Topic: %s, Data: %s", msg->topic, msg->data);
 }
 
 extern "C" void app_main()
 {
     ESP_LOGI(TAG, "Starting Pet Feeder Application");
     
-    // Initialize NVS (required for WiFi credential storage)
+    // Initialize NVS for wifi credential storage
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -41,8 +43,25 @@ extern "C" void app_main()
     }
     ESP_LOGI(TAG, "EventBus initialized");
     
-    // Subscribe to UI events
-    event_bus->subscribe(EVENT_FEED_NOW_CLICKED, onFeedNowEvent, nullptr);
+    // mqtt config
+    MQTTManager::Config mqtt_config = {
+        .broker_uri = "mqtts://455307a48c6b4ea3b9252d0bd25ff836.s1.eu.hivemq.cloud:8883",  //must include mqtts:// and :8883
+        .client_id = "esp32_petfeeder_001",  
+        .username = "feeder0",  
+        .password = "Admin000",  
+        .cert_pem = hivemq_root_ca_pem  
+    };
+    
+    // Initialize MQTT Manager
+    auto mqtt_manager = std::make_shared<MQTTManager>(event_bus, mqtt_config);
+    if (!mqtt_manager->init()) {
+        ESP_LOGE(TAG, "Failed to initialize MQTT Manager!");
+        return;
+    }
+    ESP_LOGI(TAG, "MQTT Manager initialized");
+    
+    event_bus->subscribe(EVENT_MQTT_MESSAGE_RECEIVED, onMQTTMessageReceived, event_bus.get());
+    
     
     // Initialize WiFiManager (will auto-connect if credentials exist)
     auto wifi_manager = std::make_shared<WiFiManager>(event_bus);
@@ -57,7 +76,7 @@ extern "C" void app_main()
     auto spi_bus = std::make_shared<SPIBus>(
         SPI3_HOST,
         BoardConfig::LCD_MOSI,
-        -1,  // MISO not used
+        BoardConfig::LCD_MISO,
         BoardConfig::LCD_SCLK,
         240 * 320 * 2 + 8
     );
@@ -131,7 +150,6 @@ extern "C" void app_main()
     
     ESP_LOGI(TAG, "Application running");
     
-    // Keep app_main alive forever - don't let shared_ptrs go out of scope!
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

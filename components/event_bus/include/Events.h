@@ -10,6 +10,9 @@ ESP_EVENT_DECLARE_BASE(PET_FEEDER_EVENTS);
 
 // all event types in the pet feeder system
 enum {
+    //ui events
+    EVENT_FEED_NOW_PRESSED,
+
     // WiFi events
     EVENT_WIFI_CONNECTED,
     EVENT_WIFI_DISCONNECTED,
@@ -19,19 +22,25 @@ enum {
     EVENT_PROVISIONING_STARTED,
     EVENT_RESET_CREDENTIALS,
     
+    // MQTT events
+    EVENT_MQTT_MESSAGE_RECEIVED,
+    
     // Feeding events
-    EVENT_FEED_NOW_CLICKED,
+    EVENT_FEED,
     
-    // // Schedule events
-    // EVENT_SCHEDULE_UPDATED,
-    // EVENT_SCHEDULE_SAVED,
-    // EVENT_SCHEDULE_DELETED,
-    
-    // // Food level events
+    // Food level events
     // EVENT_FOOD_LEVEL_CHANGED,
-    // EVENT_FOOD_LOW_WARNING,
-    // EVENT_FOOD_EMPTY,
-    
+
+    // cat approaching event
+
+    // rfid event
+
+    // weight sensor event
+
+    // data storage events
+    EVENT_SAVE_FEEDING_RECORD,
+    EVENT_SAVE_VISITS_RECORD,
+    EVENT_SAVE_EATING_RECORD
 };
 
 
@@ -51,16 +60,28 @@ struct schedule_data_t {
 };
 
 struct feeding_data_t {
-    uint16_t amount_grams;
-    bool is_scheduled;
     uint32_t timestamp;
+    uint16_t amount_grams;
     char reason[32];  // "manual", "scheduled", "remote"
+};
+
+struct visit_data_t {
+    uint32_t timestamp;
+    char name[32];
+};
+
+struct eating_data_t {
+    uint32_t timestamp;
+    uint16_t amount_grams;
 };
 
 struct food_level_data_t {
     uint8_t percentage;
-    float weight_kg;
-    uint32_t timestamp;
+};
+
+struct mqtt_message_data_t {
+    char topic[128];
+    char data[256];
 };
 
 #endif 

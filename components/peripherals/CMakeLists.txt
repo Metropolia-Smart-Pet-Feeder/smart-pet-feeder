@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS 
+        "src/SPIBus.cpp"
+        "src/I2CBus.cpp"
+    INCLUDE_DIRS 
+        "include"
+    REQUIRES 
+        driver 
+)

@@ -27,7 +27,8 @@ esp_err_t SPIBus::init()
         .mosi_io_num = mosi,
         .miso_io_num = miso,
         .sclk_io_num = sclk,
-        .quadwp_io_num = -1,
+        //we are using standard spi, so the following are disabled
+        .quadwp_io_num = -1,  
         .quadhd_io_num = -1,
         .data4_io_num = -1,
         .data5_io_num = -1,
