@@ -11,3 +11,6 @@ Things I changed:
 2. increase flash size
 3. add custom partition table, now we have about 3.8MB for the program
 4. enable bluetooth
+
+
+Make new branch from dev for further development.
