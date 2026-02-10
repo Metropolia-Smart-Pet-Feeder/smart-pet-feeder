@@ -4,13 +4,21 @@
 
 namespace BoardConfig {
     // SPI Display Pins
-    constexpr gpio_num_t LCD_SCLK = GPIO_NUM_36;
-    constexpr gpio_num_t LCD_MOSI = GPIO_NUM_35;
-    constexpr gpio_num_t LCD_MISO = GPIO_NUM_13;
-    constexpr gpio_num_t LCD_DC = GPIO_NUM_6;
-    constexpr gpio_num_t LCD_RST = GPIO_NUM_7;
-    constexpr gpio_num_t LCD_CS = GPIO_NUM_15;
-    constexpr gpio_num_t LCD_BACKLIGHT = GPIO_NUM_5;
+    // constexpr gpio_num_t LCD_SCLK = GPIO_NUM_36;
+    // constexpr gpio_num_t LCD_MOSI = GPIO_NUM_35;
+    // constexpr gpio_num_t LCD_MISO = GPIO_NUM_13;
+    // constexpr gpio_num_t LCD_DC = GPIO_NUM_6;
+    // constexpr gpio_num_t LCD_RST = GPIO_NUM_7;
+    // constexpr gpio_num_t LCD_CS = GPIO_NUM_15;
+    // constexpr gpio_num_t LCD_BACKLIGHT = GPIO_NUM_5;
+
+    constexpr gpio_num_t LCD_SCLK = GPIO_NUM_21;
+    constexpr gpio_num_t LCD_MOSI = GPIO_NUM_19;
+    constexpr gpio_num_t LCD_MISO = GPIO_NUM_20;
+    constexpr gpio_num_t LCD_DC = GPIO_NUM_38;
+    constexpr gpio_num_t LCD_RST = GPIO_NUM_37;
+    constexpr gpio_num_t LCD_CS = GPIO_NUM_36;
+    constexpr gpio_num_t LCD_BACKLIGHT = GPIO_NUM_35;
     
     // I2C Touch Pins
     constexpr gpio_num_t TOUCH_SCL = GPIO_NUM_9;
