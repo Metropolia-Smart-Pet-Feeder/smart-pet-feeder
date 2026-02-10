@@ -1,6 +1,8 @@
 # ESP-IDF build output
 build/
 sdkconfig.old
+sdkconfig
+sdkconfig.ci
 dependencies.lock
 
 # Python
