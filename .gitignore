@@ -4,6 +4,7 @@ sdkconfig.old
 sdkconfig
 sdkconfig.ci
 dependencies.lock
+.cache/
 
 # Python
 *.pyc
