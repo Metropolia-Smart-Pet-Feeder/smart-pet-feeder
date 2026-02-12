@@ -1,4 +1,5 @@
 #include "esp_log.h"
+#include "board_config.h"
 #include "SPIBus.h"
 #include "I2CBus.h"
 #include "Display.h"
@@ -9,25 +10,6 @@
 #include <memory>
 
 static const char* TAG = "ui_test";
-
-// Board pin definitions for test
-namespace TestBoardConfig {
-    constexpr gpio_num_t LCD_SCLK = GPIO_NUM_21;
-    constexpr gpio_num_t LCD_MOSI = GPIO_NUM_19;
-    constexpr gpio_num_t LCD_MISO = GPIO_NUM_20;
-    constexpr gpio_num_t LCD_DC   = GPIO_NUM_1;
-    constexpr gpio_num_t LCD_RST  = GPIO_NUM_37;
-    constexpr gpio_num_t LCD_CS   = GPIO_NUM_36;
-    constexpr gpio_num_t LCD_BACKLIGHT = GPIO_NUM_35;
-
-    constexpr gpio_num_t TOUCH_SCL = GPIO_NUM_9;
-    constexpr gpio_num_t TOUCH_SDA = GPIO_NUM_8;
-    constexpr gpio_num_t TOUCH_RST = GPIO_NUM_10;
-    constexpr gpio_num_t TOUCH_INT = GPIO_NUM_11;
-
-    constexpr int LCD_WIDTH  = 240;
-    constexpr int LCD_HEIGHT = 320;
-}
 
 extern "C" void app_main()
 {
@@ -44,10 +26,10 @@ extern "C" void app_main()
     // Create and initialize SPI bus for display
     auto spi_bus = std::make_shared<SPIBus>(
         SPI3_HOST,
-        TestBoardConfig::LCD_MOSI,
-        TestBoardConfig::LCD_MISO,
-        TestBoardConfig::LCD_SCLK,
-        TestBoardConfig::LCD_WIDTH * TestBoardConfig::LCD_HEIGHT * 2 + 8
+        BoardConfig::LCD_MOSI,
+        BoardConfig::LCD_MISO,
+        BoardConfig::LCD_SCLK,
+        BoardConfig::LCD_WIDTH * BoardConfig::LCD_HEIGHT * 2 + 8
     );
     ESP_ERROR_CHECK(spi_bus->init());
     ESP_LOGI(TAG, "SPI bus initialized");
@@ -55,8 +37,8 @@ extern "C" void app_main()
     // Create and initialize I2C bus for touch
     auto i2c_bus = std::make_shared<I2CBus>(
         I2C_NUM_0,
-        TestBoardConfig::TOUCH_SDA,
-        TestBoardConfig::TOUCH_SCL,
+        BoardConfig::TOUCH_SDA,
+        BoardConfig::TOUCH_SCL,
         100000
     );
     ESP_ERROR_CHECK(i2c_bus->init());
@@ -64,12 +46,12 @@ extern "C" void app_main()
 
     // Initialize display
     Display::Config display_config = {
-        .dc = TestBoardConfig::LCD_DC,
-        .cs = TestBoardConfig::LCD_CS,
-        .rst = TestBoardConfig::LCD_RST,
-        .backlight = TestBoardConfig::LCD_BACKLIGHT,
-        .h_res = TestBoardConfig::LCD_WIDTH,
-        .v_res = TestBoardConfig::LCD_HEIGHT,
+        .dc = BoardConfig::LCD_DC,
+        .cs = BoardConfig::LCD_CS,
+        .rst = BoardConfig::LCD_RST,
+        .backlight = BoardConfig::LCD_BACKLIGHT,
+        .h_res = BoardConfig::LCD_WIDTH,
+        .v_res = BoardConfig::LCD_HEIGHT,
         .pixel_clock_hz = 10 * 1000 * 1000,
         .queue_depth = 10,
         .mirror_x = true,
@@ -82,12 +64,12 @@ extern "C" void app_main()
 
     // Initialize touch driver
     TouchDriver::Config touch_config = {
-        .int_pin = TestBoardConfig::TOUCH_INT,
-        .rst_pin = TestBoardConfig::TOUCH_RST,
+        .int_pin = BoardConfig::TOUCH_INT,
+        .rst_pin = BoardConfig::TOUCH_RST,
         .device_addr = 0x38,
         .clk_hz = 100000,
-        .max_x = TestBoardConfig::LCD_WIDTH,
-        .max_y = TestBoardConfig::LCD_HEIGHT,
+        .max_x = BoardConfig::LCD_WIDTH,
+        .max_y = BoardConfig::LCD_HEIGHT,
         .swap_xy = false,
         .mirror_x = false,
         .mirror_y = false
@@ -98,8 +80,8 @@ extern "C" void app_main()
 
     // Initialize LVGL
     LVGLManager::Config lvgl_config = {
-        .h_res = TestBoardConfig::LCD_WIDTH,
-        .v_res = TestBoardConfig::LCD_HEIGHT,
+        .h_res = BoardConfig::LCD_WIDTH,
+        .v_res = BoardConfig::LCD_HEIGHT,
         .draw_buf_lines = 40,
         .double_buffer = true,
         .tick_period_ms = 5,

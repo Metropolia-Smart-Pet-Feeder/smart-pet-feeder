@@ -9,6 +9,7 @@ set(EXTRA_COMPONENT_DIRS
     ${PROJECT_ROOT}/components/touch_display
     ${PROJECT_ROOT}/components/event_bus
     ${PROJECT_ROOT}/components/peripherals
+    ${PROJECT_ROOT}/components/board_config
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
