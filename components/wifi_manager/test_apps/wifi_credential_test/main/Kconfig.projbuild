@@ -1,0 +1,15 @@
+menu "Test WiFi Credentials"
+
+    config TEST_WIFI_SSID
+        string "WiFi SSID"
+        default "YOUR_SSID"
+        help
+            SSID for WiFi credential test.
+
+    config TEST_WIFI_PASSWORD
+        string "WiFi Password"
+        default "YOUR_PASSWORD"
+        help
+            Password for WiFi credential test.
+
+endmenu
