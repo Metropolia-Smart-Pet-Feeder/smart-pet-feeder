@@ -26,6 +26,10 @@ namespace BoardConfig {
     constexpr gpio_num_t TOUCH_RST = GPIO_NUM_10;
     constexpr gpio_num_t TOUCH_INT = GPIO_NUM_11;
 
+	// Motor Pins
+    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_15;
+    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_16;
+
     // Display Settings
     constexpr int LCD_WIDTH = 240;
     constexpr int LCD_HEIGHT = 320;
