@@ -9,7 +9,7 @@ set(EXTRA_COMPONENT_DIRS
     ${PROJECT_ROOT}/components/event_bus
     ${PROJECT_ROOT}/components/peripherals
     ${PROJECT_ROOT}/components/wifi_manager
-    ${PROJECT_ROOT}/components/board_config
+    ${PROJECT_ROOT}/components/common
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

@@ -8,7 +8,6 @@ set(EXTRA_COMPONENT_DIRS
     ${PROJECT_ROOT}/components/common
     ${PROJECT_ROOT}/components/dispense_control
     ${PROJECT_ROOT}/components/stepper_motor
-    ${PROJECT_ROOT}/components/board_config
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
