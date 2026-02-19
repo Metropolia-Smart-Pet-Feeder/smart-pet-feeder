@@ -3,6 +3,14 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
+set(SDKCONFIG_DEFAULTS "${PROJECT_ROOT}/sdkconfig.defaults")
+
+configure_file(
+        "${PROJECT_ROOT}/partitions.csv"
+        "${CMAKE_CURRENT_SOURCE_DIR}/partitions.csv"
+        COPYONLY
+)
+
 set(EXTRA_COMPONENT_DIRS
     ${PROJECT_ROOT}/components/ui
     ${PROJECT_ROOT}/components/touch_display
