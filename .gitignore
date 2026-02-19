@@ -6,11 +6,15 @@ sdkconfig.ci
 dependencies.lock
 .cache/
 
+# Partition tables in components test apps(will be copied by cmake)
+components/**/partitions.csv
+
 # Python
 *.pyc
 __pycache__/
 
 # Editor/IDE
+cmake-*/
 .vscode/
 .idea/
 *.swp
