@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "src/EventBus.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES esp_event
+    REQUIRES esp_event common
 )
