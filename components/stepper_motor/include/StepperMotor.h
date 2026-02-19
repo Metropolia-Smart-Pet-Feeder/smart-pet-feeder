@@ -4,6 +4,7 @@
 #include "soc/gpio_num.h"
 #include "esp_err.h"
 #include "driver/rmt_types.h"
+#include "freertos/FreeRTOS.h"
 
 class StepperMotor
 {
@@ -20,7 +21,7 @@ public:
     ~StepperMotor();
 
     esp_err_t init();
-    esp_err_t move(uint32_t steps, uint8_t direction, uint32_t rpm) const;
+    esp_err_t move(uint32_t steps, uint8_t direction, uint32_t rpm, uint32_t timeout_ms = portMAX_DELAY) const;
     [[nodiscard]] uint32_t degreesToSteps(float degrees) const;
 
 private:
