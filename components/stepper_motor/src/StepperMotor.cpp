@@ -45,7 +45,7 @@ StepperMotor::~StepperMotor() {
     }
 }
 
-esp_err_t StepperMotor::move(uint32_t steps, uint8_t direction, uint32_t rpm) const
+esp_err_t StepperMotor::move(uint32_t steps, uint8_t direction, uint32_t rpm, uint32_t timeout_ms) const
 {
     // set direction
     gpio_set_level(config_.dir_pin, direction);
@@ -84,7 +84,7 @@ esp_err_t StepperMotor::move(uint32_t steps, uint8_t direction, uint32_t rpm) co
         );
 
         ESP_RETURN_ON_ERROR(
-            rmt_tx_wait_all_done(channel_, portMAX_DELAY),
+            rmt_tx_wait_all_done(channel_, pdMS_TO_TICKS(timeout_ms)),
             TAG, "rmt_tx_wait_all_done failed"
         );
 

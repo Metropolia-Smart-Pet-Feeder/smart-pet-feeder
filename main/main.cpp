@@ -11,7 +11,9 @@
 #include "Events.h"
 #include "WiFiManager.h"
 #include "MQTTManager.h"
-#include "hivemq_ca.h"  
+#include "hivemq_ca.h"
+#include "Types.h"
+#include "DispenseControl.h"
 #include <memory>
 
 static const char* TAG = "main";

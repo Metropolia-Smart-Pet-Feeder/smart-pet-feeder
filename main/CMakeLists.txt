@@ -11,4 +11,5 @@ idf_component_register(
         mqtt_manager
         peripherals
         board_config
+        dispense_control
 )
