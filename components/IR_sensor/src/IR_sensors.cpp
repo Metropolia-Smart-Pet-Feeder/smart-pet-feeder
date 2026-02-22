@@ -36,10 +36,10 @@ void IR_sensors::monitor_sensors() {
     int normal_state = alert_when_high ? 0 : 1; // Determine the normal state
 
     std::string sensor_type;
-    if(name.find("food") != std::string::npos) { // Sensor name contains "food" if it's a food level sensor, can change if want different way to identify
+    if(name.find("Food") != std::string::npos) { // Sensor name contains "food" if it's a food level sensor, can change if want different way to identify
         sensor_type = "Food Level";
     }
-    else if(name.find("movement") != std::string::npos) { // Sensor name contains "movement" if it's a movement sensor, can change if want different way to identify
+    else if(name.find("Movement") != std::string::npos) { // Sensor name contains "movement" if it's a movement sensor, can change if want different way to identify
         sensor_type = "Movement";
     }
 
@@ -52,7 +52,7 @@ void IR_sensors::monitor_sensors() {
                 event_bus->publish(EVENT_FOOD_LEVEL_CHANGED, "Food below level sensor " + name);
             }
             if(sensor_type == "Movement") {
-                event_bus->publish(EVENT_CAT_APPROACHED, "Cat approaching sensor " + name);
+                event_bus->publish(EVENT_CAT_APPROACHED);
             }
 
         } else if(sensor_value == normal_state && last_sensor_state != normal_state) { // IF normal condition met and state changed
@@ -61,7 +61,7 @@ void IR_sensors::monitor_sensors() {
                 event_bus->publish(EVENT_FOOD_LEVEL_CHANGED, "Food back above level sensor " + name);
             }
             if(sensor_type == "Movement") {
-                event_bus->publish(EVENT_CAT_LEFT, "Cat left sensor " + name);
+                event_bus->publish(EVENT_CAT_LEFT);
             }
         }
         last_sensor_state = sensor_value;

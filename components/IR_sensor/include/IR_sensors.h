@@ -4,6 +4,9 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include "EventBus.h"
+#include <string>
+#include <memory>
 
 class IR_sensors {
     public:

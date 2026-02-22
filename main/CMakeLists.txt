@@ -11,4 +11,6 @@ idf_component_register(
         mqtt_manager
         peripherals
         board_config
+        IR_sensor
+        RFID_reader
 )

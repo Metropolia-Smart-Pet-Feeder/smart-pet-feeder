@@ -140,18 +140,35 @@ void RC522::rfid_task(void *arg){
     uint8_t uid[10];
     uint8_t uid_len;
 
+    uint8_t last_uid[10]={0};
+    uint8_t last_uid_len = 0;
+    
+    TickType_t last_publish_time = 0;
+
     while(true) {
         if(self->detect_card()){
             if(self->read_UID(uid, uid_len)){
-                char uid_str[32] = {0};
-                char *ptr = uid_str;
-                for (int i = 0; i < uid_len; i++) {
-                    ptr += sprintf(ptr, "%02X", uid[i]);
+                bool same_card = (uid_len == last_uid_len) &&(memcmp(uid, last_uid, uid_len)==0);
+
+                TickType_t now = xTaskGetTickCount();
+
+                if(!same_card || ((now-last_publish_time)> pdMS_TO_TICKS(5000))) {
+                    memcpy(last_uid, uid, uid_len);
+                    last_uid_len = uid_len;
+                    last_publish_time = now;
+
+                    char uid_str[32] = {0};
+                    char *ptr = uid_str;
+                    for (int i = 0; i < uid_len; i++) {
+                        ptr += sprintf(ptr, "%02X", uid[i]);
+                    }
+
+                    self->event_bus->publish(EVENT_RFID_DETECTED, uid_str);
+                    ESP_LOGI("RC522", "Card detected with UID: %s", uid_str);
                 }
-                self->event_bus->publish(EVENT_RFID_DETECTED, uid_str);
-                ESP_LOGI("RC522", "Card detected with UID: %s", uid_str);
+
             }
-        }
+        } 
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }

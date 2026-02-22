@@ -11,7 +11,9 @@
 #include "Events.h"
 #include "WiFiManager.h"
 #include "MQTTManager.h"
-#include "hivemq_ca.h"  
+#include "hivemq_ca.h"
+#include "RC522.h"
+#include "IR_sensors.h"  
 #include <memory>
 
 static const char* TAG = "main";
@@ -140,6 +142,21 @@ extern "C" void app_main()
     };
     auto lvgl = std::make_shared<LVGLManager>(display, touch, lvgl_config);
     
+    auto rfid = std::make_shared<RC522>(spi_bus, GPIO_NUM_16, GPIO_NUM_4, event_bus);
+    ESP_ERROR_CHECK(rfid->init());
+    rfid->startTask();
+    ESP_LOGI(TAG, "RFID reader initialized and task started");
+
+    auto ir_sensor_1 = std::make_shared<IR_sensors>("FoodLevel25", GPIO_NUM_15, true, event_bus);
+    auto ir_sensor_2 = std::make_shared<IR_sensors>("MovementLeft", GPIO_NUM_5, false, event_bus);
+    auto ir_sensor_3 = std::make_shared<IR_sensors>("MovementMiddle", GPIO_NUM_6, false, event_bus);
+    auto ir_sensor_4 = std::make_shared<IR_sensors>("MovementRight", GPIO_NUM_7, false, event_bus);
+    ir_sensor_1->start_monitoring();
+    ir_sensor_2->start_monitoring();
+    ir_sensor_3->start_monitoring();
+    ir_sensor_4->start_monitoring();
+    ESP_LOGI(TAG, "IR sensors initialized and monitoring started");
+
     // Create UI with EventBus
     auto ui = std::make_shared<UI>(lvgl, event_bus);
     lvgl->setUIBuilder([ui]() { ui->build(); });
