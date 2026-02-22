@@ -5,6 +5,7 @@
 #include "nvs_flash.h"
 #include "wifi_provisioning/scheme_ble.h"
 #include <cstring>
+#include "Types.h"
 
 const char* WiFiManager::TAG = "WiFiManager";
 
