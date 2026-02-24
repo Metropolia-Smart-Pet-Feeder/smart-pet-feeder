@@ -112,8 +112,6 @@ unsigned long HX711_read()
 	return (value);
 }
 
-
-
 unsigned long  HX711_read_average(char times)
 {
 	ESP_LOGI(DEBUGTAG, "===================== READ AVERAGE START ====================");
@@ -130,12 +128,10 @@ unsigned long HX711_get_value(char times)
 {
 	unsigned long avg = HX711_read_average(times);
 	if(avg < OFFSET){
-		ESP_LOGI(DEBUGTAG, "===================== READ value : %ld ====================",(OFFSET - avg));
-		ESP_LOGI(DEBUGTAG, "===================== READ value222 : %ld ====================",(OFFSET - avg)/62);
-		return OFFSET - avg ;
+		return OFFSET - avg;
+	} else {
+		return avg - OFFSET;   // 兼容极性相反的传感器
 	}
-
-	return 0;
 }
 
 float HX711_get_units(char times)
@@ -152,10 +148,28 @@ void HX711_tare( )
 	HX711_set_offset(sum);
 	// ESP_LOGI(DEBUGTAG, "===================== END TARE: %ld ====================",sum);
 }
+void HX711_tareAB( )
+{
+	// Tare Channel A
+	HX711_set_gain(eGAIN_128);
+	HX711_read();
+	vTaskDelay(pdMS_TO_TICKS(50));
+	HX711_tare();
+	OFFSET_A = OFFSET;
+
+	// Tare Channel B
+	HX711_set_gain(eGAIN_32);
+	HX711_read();
+	vTaskDelay(pdMS_TO_TICKS(50));
+	HX711_tare();
+	OFFSET_B = OFFSET;
+}
 
 void HX711_set_scale(float scale )
 {
 	SCALE = scale;
+	SCALE_A = scale;
+	SCALE_B = scale;
 }
 
 float HX711_get_scale()
@@ -256,6 +270,11 @@ float HX711_auto_calibrate_dual(float known_weight, uint32_t tare_delay_ms, uint
 	unsigned long raw_total = raw_A + raw_B;
 	if(raw_total == 0) {
 		ESP_LOGE(DEBUGTAG, "Calibration failed: total raw is 0");
+		return 0;
+	}
+
+	if(raw_total < 500) {
+		ESP_LOGE(DEBUGTAG, "Calibration suspicious: raw_total=%ld too small, retry!", raw_total);
 		return 0;
 	}
 

@@ -52,6 +52,9 @@ float HX711_get_units(char times);
 // set the OFFSET value for tare weight; times = how many times to read the tare value
 void HX711_tare();
 
+// tare A channel and B channel;
+void HX711_tareAB();
+
 // set the SCALE value; this value is used to convert the raw data to "human readable" data (measure units)
 void HX711_set_scale(float scale );
 
