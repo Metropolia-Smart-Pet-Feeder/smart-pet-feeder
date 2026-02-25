@@ -11,7 +11,6 @@
 #include "Events.h"
 #include "WiFiManager.h"
 #include "MQTTManager.h"
-#include "hivemq_ca.h"
 #include "Types.h"
 #include "DispenseControl.h"
 #include <memory>
@@ -45,15 +44,23 @@ extern "C" void app_main()
     }
     ESP_LOGI(TAG, "EventBus initialized");
     
+    // Initialize WiFiManager first (we need device_id for MQTT config)
+    auto wifi_manager = std::make_shared<WiFiManager>(event_bus);
+    if (!wifi_manager->init()) {
+        ESP_LOGE(TAG, "Failed to initialize WiFiManager!");
+        return;
+    }
+    ESP_LOGI(TAG, "WiFiManager initialized");
+
     // mqtt config
     MQTTManager::Config mqtt_config = {
-        .broker_uri = "mqtts://455307a48c6b4ea3b9252d0bd25ff836.s1.eu.hivemq.cloud:8883",  //must include mqtts:// and :8883
-        .client_id = "esp32_petfeeder_001",  
-        .username = "feeder0",  
-        .password = "Admin000",  
-        .cert_pem = hivemq_root_ca_pem  
+        .broker_uri = "mqtt://104.168.122.188:1883",
+        .client_id = wifi_manager->getDeviceId(),
+        .username = "petfeeder_admin",
+        .password = "admin",
+        .device_id = wifi_manager->getDeviceId()
     };
-    
+
     // Initialize MQTT Manager
     auto mqtt_manager = std::make_shared<MQTTManager>(event_bus, mqtt_config);
     if (!mqtt_manager->init()) {
@@ -61,17 +68,8 @@ extern "C" void app_main()
         return;
     }
     ESP_LOGI(TAG, "MQTT Manager initialized");
-    
+
     event_bus->subscribe(EVENT_MQTT_MESSAGE_RECEIVED, onMQTTMessageReceived, event_bus.get());
-    
-    
-    // Initialize WiFiManager (will auto-connect if credentials exist)
-    auto wifi_manager = std::make_shared<WiFiManager>(event_bus);
-    if (!wifi_manager->init()) {
-        ESP_LOGE(TAG, "Failed to initialize WiFiManager!");
-        return;
-    }
-    ESP_LOGI(TAG, "WiFiManager initialized");
     
     
     // Create and initialize SPI bus for display
