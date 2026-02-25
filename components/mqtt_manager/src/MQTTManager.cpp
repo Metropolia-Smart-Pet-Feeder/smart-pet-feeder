@@ -2,15 +2,20 @@
 #include "Events.h"
 #include "esp_log.h"
 #include <cstring>
+#include "Types.h"
 
 const char* MQTTManager::TAG = "MQTTManager";
 
 MQTTManager::MQTTManager(std::shared_ptr<EventBus> event_bus, const Config& config)
     : event_bus(event_bus)
     , config(config)
+    , topic_event("petfeeder/" + config.device_id + "/event")
+    , topic_command("petfeeder/" + config.device_id + "/command")
     , mqtt_client(nullptr)
     , is_connected(false)
 {
+    ESP_LOGI(TAG, "Event topic:   %s", topic_event.c_str());
+    ESP_LOGI(TAG, "Command topic: %s", topic_command.c_str());
 }
 
 MQTTManager::~MQTTManager()
@@ -29,10 +34,6 @@ bool MQTTManager::init()
     mqtt_cfg.credentials.username = config.username.c_str();
     mqtt_cfg.credentials.authentication.password = config.password.c_str();
     
-    // certificate
-    if (!config.cert_pem.empty()) {
-        mqtt_cfg.broker.verification.certificate = config.cert_pem.c_str();
-    }
     
     // create cleint
     mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
@@ -128,6 +129,8 @@ void MQTTManager::mqttEventHandler(void* handler_args, esp_event_base_t base, in
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
             manager->is_connected = true;
+            esp_mqtt_client_subscribe(manager->mqtt_client, manager->topic_command.c_str(), 1);
+            ESP_LOGI(TAG, "Subscribed to command topic: %s", manager->topic_command.c_str());
             break;
             
         case MQTT_EVENT_DISCONNECTED:
