@@ -249,11 +249,6 @@ void WiFiManager::ipEventHandler(void* arg, esp_event_base_t event_base,
         
         manager->is_connected = true;
         
-        // If we were provisioning, stop it now
-        if (manager->is_provisioning) {
-            manager->stopProvisioning();
-        }
-        
         // Publish WiFi connected event to custom event bus with data
         wifi_event_data_t wifi_data;
         strncpy(wifi_data.ssid, manager->current_ssid, sizeof(wifi_data.ssid));
