@@ -67,7 +67,7 @@ esp_err_t RC522::init() {
 }
 
 void RC522::startTask() {
-    xTaskCreatePinnedToCore(rfid_task, "rc522_task", 4096, this, 10, &task_handle,tskNO_AFFINITY);
+    xTaskCreate(rfid_task, "rc522_task", 4096, this, 10, &task_handle);
 }
 
 esp_err_t RC522::transceive(uint8_t *tx, uint8_t *rx, size_t len) {
