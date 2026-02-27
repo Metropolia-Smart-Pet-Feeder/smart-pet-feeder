@@ -22,6 +22,7 @@ class FoodLevelMonitor{
         IR_sensors sensor50;
         IR_sensors sensor75;
         std::shared_ptr<EventBus> event_bus;
+        int previous_level = -1;
         TaskHandle_t task_handle = nullptr;
 
         static void enter_task(void* arg);

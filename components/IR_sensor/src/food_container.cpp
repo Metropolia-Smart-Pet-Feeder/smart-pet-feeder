@@ -31,7 +31,7 @@ void FoodLevelMonitor::task_loop(){
 
 void FoodLevelMonitor::update_food_level() {
     int level;
-    if(!sensor75.read_sensor()){
+    if(!sensor75.read_sensor()){ // sensor reading low means the sensor is blocked, which means the food level is above that sensor.
         level = 4;
     }
     else if(!sensor50.read_sensor()){
@@ -43,6 +43,10 @@ void FoodLevelMonitor::update_food_level() {
     else{
         level = 1;
     }
-    event_bus->publish(EVENT_FOOD_LEVEL_CHANGED, level);
-    ESP_LOGI("FoodLevelMonitor", "Food level updated to: %d", level);
+
+    if(level != previous_level) {
+        event_bus->publish(EVENT_FOOD_LEVEL_CHANGED, level);
+        ESP_LOGI("FoodLevelMonitor", "Food level updated to: %d", level);
+        previous_level = level;
+    }
 }
