@@ -25,18 +25,23 @@ void MotionDetector::enter_task(void* arg){
 void MotionDetector::task_loop(){
     while(true) {
         update_movement_status();
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 void MotionDetector::update_movement_status() {
-
     if(!sensor_left.read_sensor() || !sensor_center.read_sensor() || !sensor_right.read_sensor()){
-        event_bus->publish(EVENT_CAT_APPROACHED);
-        ESP_LOGI("MotionDetector", "Cat detected");
+        if(!cat_present_previously) {
+            event_bus->publish(EVENT_CAT_APPROACHED);
+            ESP_LOGI("MotionDetector", "Cat detected");
+        }
+        cat_present_previously = true;
     }
     else {
-        event_bus->publish(EVENT_CAT_LEFT);
-        ESP_LOGI("MotionDetector", "Cat left");
+        if(cat_present_previously) {
+            event_bus->publish(EVENT_CAT_LEFT);
+            ESP_LOGI("MotionDetector", "Cat left");
+        }
+        cat_present_previously = false;
     }
 }

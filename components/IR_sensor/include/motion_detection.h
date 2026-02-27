@@ -22,6 +22,7 @@ class MotionDetector{
         IR_sensors sensor_center;
         IR_sensors sensor_right;
         std::shared_ptr<EventBus> event_bus;
+        bool cat_present_previously = false;
         TaskHandle_t task_handle = nullptr;
 
         static void enter_task(void* arg);
