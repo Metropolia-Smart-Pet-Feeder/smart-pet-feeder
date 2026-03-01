@@ -153,10 +153,13 @@ void UI::buildMainScreen()
 void UI::onFeedNowClicked(lv_event_t* event)
 {
     ESP_LOGI(TAG, "Feed Now clicked");
-    
+
     UI* ui = (UI*)lv_event_get_user_data(event);
     if (ui) {
-        ui->event_bus->publish(EVENT_FEED_NOW_PRESSED);
+        feed_request_t request = {};
+        request.portions = 1;
+        request.source   = FEED_SOURCE_MANUAL;
+        ui->event_bus->publish(EVENT_FEED_REQUEST, request);
         ui->showFeedingScreen();
     }
 }
