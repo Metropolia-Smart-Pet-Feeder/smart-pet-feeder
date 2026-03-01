@@ -17,10 +17,10 @@
 
 static const char* TAG = "main";
 
-static void onMQTTMessageReceived(void* arg, esp_event_base_t base, int32_t id, void* data)
+static void onFeedRequest(void* arg, esp_event_base_t base, int32_t id, void* data)
 {
-    auto* msg = static_cast<mqtt_message_data_t*>(data);
-    ESP_LOGI(TAG, "MQTT Message - Topic: %s, Data: %s", msg->topic, msg->data);
+    auto* request = static_cast<feed_request_t*>(data);
+    ESP_LOGI(TAG, "Feed request received: %d portions, source=%d", request->portions, request->source);
 }
 
 extern "C" void app_main()
@@ -69,7 +69,7 @@ extern "C" void app_main()
     }
     ESP_LOGI(TAG, "MQTT Manager initialized");
 
-    event_bus->subscribe(EVENT_MQTT_MESSAGE_RECEIVED, onMQTTMessageReceived, event_bus.get());
+    event_bus->subscribe(EVENT_FEED_REQUEST, onFeedRequest, nullptr);
     
     
     // Create and initialize SPI bus for display
