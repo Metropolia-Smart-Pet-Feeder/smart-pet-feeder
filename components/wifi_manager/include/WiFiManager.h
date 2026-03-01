@@ -22,6 +22,7 @@ public:
     
     bool isConnected() const {return is_connected;};
     std::string getSSID() const {return std::string(current_ssid);};
+    std::string getDeviceId() const {return std::string(device_id);};
     void resetCredentials();
 
 private:
@@ -30,6 +31,7 @@ private:
     bool is_connected;
     bool is_provisioning;
     char current_ssid[33];
+    char device_id[20]{0};
     
     esp_event_handler_instance_t wifi_event_handler;
     esp_event_handler_instance_t ip_event_handler;

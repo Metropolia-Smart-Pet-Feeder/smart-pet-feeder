@@ -10,7 +10,8 @@ idf_component_register(
         wifi_manager
         mqtt_manager
         peripherals
-        board_config
+        common
+        dispense_control
         IR_sensor
         RFID_reader
 )
