@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include <cstring>
 #include "Types.h"
+#include "cJSON.h"
 
 const char* MQTTManager::TAG = "MQTTManager";
 
@@ -48,6 +49,7 @@ bool MQTTManager::init()
     //subscribe to wifi events. auto connect mqtt if wifi connected
     event_bus->subscribe(EVENT_WIFI_CONNECTED, onWiFiConnectedEvent, this);
     event_bus->subscribe(EVENT_WIFI_DISCONNECTED, onWiFiDisconnectedEvent, this);
+    event_bus->subscribe(EVENT_FEED_COMPLETED, onFeedCompltedEvent, this);
     
     ESP_LOGI(TAG, "MQTT Manager initialized");
     return true;
@@ -86,40 +88,6 @@ bool MQTTManager::publish(const std::string& topic, const std::string& data, int
     return true;
 }
 
-bool MQTTManager::subscribe(const std::string& topic, int qos)
-{
-    if (!is_connected) {
-        ESP_LOGW(TAG, "Cannot subscribe, not connected to MQTT broker");
-        return false;
-    }
-    
-    int msg = esp_mqtt_client_subscribe(mqtt_client, topic.c_str(), qos);
-    
-    if (msg == -1) {
-        ESP_LOGE(TAG, "Failed to subscribe to topic: %s", topic.c_str());
-        return false;
-    }
-    
-    return true;
-}
-
-bool MQTTManager::unsubscribe(const std::string& topic)
-{
-    if (!is_connected) {
-        ESP_LOGW(TAG, "Cannot unsubscribe, not connected to MQTT broker");
-        return false;
-    }
-    
-    int msg_id = esp_mqtt_client_unsubscribe(mqtt_client, topic.c_str());
-    
-    if (msg_id == -1) {
-        ESP_LOGE(TAG, "Failed to unsubscribe from topic: %s", topic.c_str());
-        return false;
-    }
-    
-    return true;
-}
-
 void MQTTManager::mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data)
 {
     MQTTManager* manager = static_cast<MQTTManager*>(handler_args);
@@ -155,23 +123,57 @@ void MQTTManager::mqttEventHandler(void* handler_args, esp_event_base_t base, in
             ESP_LOGI(TAG, "MQTT_EVENT_DATA");
             ESP_LOGI(TAG, "Topic: %.*s", event->topic_len, event->topic);
             ESP_LOGI(TAG, "Data: %.*s", event->data_len, event->data);
-            
-            // Publish received MQTT message to EventBus
-            mqtt_message_data_t msg_data = {};
-            
-            // Copy topic
-            int topic_len = event->topic_len < sizeof(msg_data.topic) - 1 ? 
-                           event->topic_len : sizeof(msg_data.topic) - 1;
-            memcpy(msg_data.topic, event->topic, topic_len);
-            msg_data.topic[topic_len] = '\0';
-            
-            // Copy data
-            int data_len = event->data_len < sizeof(msg_data.data) - 1 ? 
-                          event->data_len : sizeof(msg_data.data) - 1;
-            memcpy(msg_data.data, event->data, data_len);
-            msg_data.data[data_len] = '\0';
-            
-            manager->event_bus->publish(EVENT_MQTT_MESSAGE_RECEIVED, &msg_data, sizeof(msg_data));
+
+            // null-terminate data for parsing
+            char data_buf[256] = {};
+            int data_len = event->data_len < (int)sizeof(data_buf) - 1 ? event->data_len : (int)sizeof(data_buf) - 1;
+            memcpy(data_buf, event->data, data_len);
+
+            cJSON* root = cJSON_Parse(data_buf);
+            if (!root) {
+                ESP_LOGW(TAG, "Failed to parse command JSON");
+                break;
+            }
+
+            const cJSON* type_item = cJSON_GetObjectItem(root, "type");
+            if (!cJSON_IsString(type_item)) {
+                ESP_LOGW(TAG, "Command missing 'type' field");
+                cJSON_Delete(root);
+                break;
+            }
+
+            const char* type = type_item->valuestring;
+
+            if (strcmp(type, "feed") == 0) {
+                const cJSON* amount_item = cJSON_GetObjectItem(root, "amount");
+                int amount = cJSON_IsNumber(amount_item) ? amount_item->valueint : 1;
+                feed_request_t request = {};
+                request.portions = static_cast<uint8_t>(amount);
+                request.source   = FEED_SOURCE_REMOTE;
+                ESP_LOGI(TAG, "Feed command: %d portions", amount);
+                manager->event_bus->publish(EVENT_FEED_REQUEST, request);
+
+            } else if (strcmp(type, "schedule") == 0) {
+                const cJSON* arr = cJSON_GetObjectItem(root, "schedules");
+                if (cJSON_IsArray(arr)) {
+                    schedule_list_t list = {};
+                    int count = cJSON_GetArraySize(arr);
+                    list.count = static_cast<uint8_t>(count > MAX_SCHEDULES ? MAX_SCHEDULES : count);
+                    for (int i = 0; i < list.count; i++) {
+                        const cJSON* entry   = cJSON_GetArrayItem(arr, i);
+                        list.schedules[i].hour     = static_cast<uint8_t>(cJSON_GetObjectItem(entry, "hour")->valueint);
+                        list.schedules[i].minute   = static_cast<uint8_t>(cJSON_GetObjectItem(entry, "minute")->valueint);
+                        list.schedules[i].portions = static_cast<uint8_t>(cJSON_GetObjectItem(entry, "amount")->valueint);
+                    }
+                    ESP_LOGI(TAG, "Schedule command: %d entries", list.count);
+                    manager->event_bus->publish(EVENT_SCHEDULE_UPDATE, list);
+                }
+
+            } else {
+                ESP_LOGW(TAG, "Unknown command type: %s", type);
+            }
+
+            cJSON_Delete(root);
             break;
         }
             
@@ -213,4 +215,14 @@ void MQTTManager::onWiFiDisconnectedEvent(void* arg, esp_event_base_t base,
 {
     MQTTManager* manager = static_cast<MQTTManager*>(arg);
     manager->disconnect();
+}
+
+void MQTTManager::onFeedCompltedEvent(void* arg, esp_event_base_t base,
+                                       int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    const feed_status_t* feed_status = static_cast<feed_status_t*>(data);
+    char payload[64];
+    snprintf(payload, sizeof(payload), "{\"type\":\"dispense\",\"amount\":%d}", feed_status->portions);
+    manager->publish(manager->topic_event, payload);    
 }

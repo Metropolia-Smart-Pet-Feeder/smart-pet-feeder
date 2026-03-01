@@ -24,12 +24,7 @@ public:
     void connect();
     void disconnect();
     bool publish(const std::string& topic, const std::string& data, int qos = 0);
-    bool subscribe(const std::string& topic, int qos = 0);
-    bool unsubscribe(const std::string& topic);
     bool isConnected() const { return is_connected; }
-    const std::string& getEventTopic() const { return topic_event; }
-    const std::string& getCommandTopic() const { return topic_command; }
-
 private:
     std::shared_ptr<EventBus> event_bus;
     Config config;
@@ -43,9 +38,14 @@ private:
     // mqtt event handler
     static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
     
-    //auto start and stop mqtt on wifi events
+    // mqtt event callbacks
     static void onWiFiConnectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void onWiFiDisconnectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onFeedCompltedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onFoodLevelChangedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onCatApproachedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onCatLeftEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onRfidDetectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     
     static const char* TAG;
 };
