@@ -23,8 +23,8 @@ namespace BoardConfig {
     // I2C Touch Pins
     constexpr gpio_num_t TOUCH_SCL = GPIO_NUM_9;
     constexpr gpio_num_t TOUCH_SDA = GPIO_NUM_8;
-    constexpr gpio_num_t TOUCH_RST = GPIO_NUM_10;
-    constexpr gpio_num_t TOUCH_INT = GPIO_NUM_11;
+    constexpr gpio_num_t TOUCH_RST = GPIO_NUM_18;
+    constexpr gpio_num_t TOUCH_INT = GPIO_NUM_17;
 
 	// Motor Pins
     constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_15;
