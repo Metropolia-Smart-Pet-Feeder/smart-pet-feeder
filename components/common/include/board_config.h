@@ -3,7 +3,7 @@
 #include "driver/gpio.h"
 
 namespace BoardConfig {
-
+    // SPI Display Pins
     constexpr gpio_num_t LCD_SCLK = GPIO_NUM_21;
     constexpr gpio_num_t LCD_MOSI = GPIO_NUM_19;
     constexpr gpio_num_t LCD_MISO = GPIO_NUM_20;
@@ -18,9 +18,36 @@ namespace BoardConfig {
     constexpr gpio_num_t TOUCH_RST = GPIO_NUM_18;
     constexpr gpio_num_t TOUCH_INT = GPIO_NUM_17;
 
-	// Motor Pins
-    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_15;
-    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_16;
+    //RFID pins Uses same SCLK, MISO & MOSI as LCD.
+    constexpr gpio_num_t RFID_RST = GPIO_NUM_48;
+    constexpr gpio_num_t RFID_CS = GPIO_NUM_47;
+
+    // IR sensor pins
+    constexpr gpio_num_t IR_FOOD_LEVEL_75 = GPIO_NUM_41;
+    constexpr gpio_num_t IR_FOOD_LEVEL_50 = GPIO_NUM_42;
+    constexpr gpio_num_t IR_FOOD_LEVEL_25 = GPIO_NUM_2;
+    constexpr gpio_num_t IR_MOTION_LEFT = GPIO_NUM_4;
+    constexpr gpio_num_t IR_MOTION_CENTER = GPIO_NUM_5;
+    constexpr gpio_num_t IR_MOTION_RIGHT = GPIO_NUM_6;
+
+    // weight sensor pins
+    constexpr gpio_num_t SCALE_1 = GPIO_NUM_40;
+    constexpr gpio_num_t SCALE_2 = GPIO_NUM_39;
+
+    // motor control pins
+    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_14;
+    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_10;
+    constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_46;
+
+    // SPI to P4 pins
+    constexpr gpio_num_t P4_SCLK = GPIO_NUM_12;
+    constexpr gpio_num_t P4_MOSI = GPIO_NUM_11;
+    constexpr gpio_num_t P4_MISO = GPIO_NUM_13;
+    constexpr gpio_num_t P4_EXTRA_1 = GPIO_NUM_15;
+    constexpr gpio_num_t P4_EXTRA_2 = GPIO_NUM_16;
+    constexpr gpio_num_t P4_EXTRA_3 = GPIO_NUM_3;
+
+    // 
 
     // Display Settings
     constexpr int LCD_WIDTH = 240;

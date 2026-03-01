@@ -13,6 +13,9 @@
 #include "MQTTManager.h"
 #include "Types.h"
 #include "DispenseControl.h"
+#include "RC522.h"
+#include "food_container.h"
+#include "motion_detection.h"  
 #include <memory>
 
 static const char* TAG = "main";
@@ -140,6 +143,20 @@ extern "C" void app_main()
     };
     auto lvgl = std::make_shared<LVGLManager>(display, touch, lvgl_config);
     
+    // Initialize RFID 
+    auto rfid = std::make_shared<RC522>(spi_bus, BoardConfig::RFID_CS, BoardConfig::RFID_RST, event_bus);
+    ESP_ERROR_CHECK(rfid->init());
+    rfid->startTask();
+    ESP_LOGI(TAG, "RFID reader initialized and task started");
+
+    // Initialize food container monitoring
+    auto food_monitor = std::make_shared<FoodLevelMonitor>(BoardConfig::IR_FOOD_LEVEL_25, BoardConfig::IR_FOOD_LEVEL_50, BoardConfig::IR_FOOD_LEVEL_75, event_bus);
+    food_monitor->start_monitoring();
+
+    // Initialize motion detection
+    auto motion_detector = std::make_shared<MotionDetector>(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus);
+    motion_detector->start_monitoring();
+
     // Create UI with EventBus
     auto ui = std::make_shared<UI>(lvgl, event_bus);
     lvgl->setUIBuilder([ui]() { ui->build(); });

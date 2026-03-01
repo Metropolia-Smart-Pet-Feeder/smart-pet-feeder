@@ -12,4 +12,6 @@ idf_component_register(
         peripherals
         common
         dispense_control
+        IR_sensor
+        RFID_reader
 )

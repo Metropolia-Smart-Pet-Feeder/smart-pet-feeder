@@ -31,11 +31,15 @@ enum {
     EVENT_CALIBRATION_FAILED,
 
     // Food level events
-    // EVENT_FOOD_LEVEL_CHANGED,
+    EVENT_FOOD_LEVEL_CHANGED,
 
     // cat approaching event
+    EVENT_CAT_APPROACHED,
+    EVENT_CAT_LEFT,
 
     // rfid event
+    EVENT_RFID_DETECTED,
+    EVENT_RFID_REMOVED,
 
     // weight sensor event
 
