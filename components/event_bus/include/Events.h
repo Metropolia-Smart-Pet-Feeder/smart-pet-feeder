@@ -20,9 +20,6 @@ enum {
     EVENT_PROVISIONING_STARTED,
     EVENT_RESET_CREDENTIALS,
 
-    // MQTT events
-    EVENT_MQTT_MESSAGE_RECEIVED,
-
     // Feeding events
     EVENT_FEED_REQUEST,
     EVENT_FEED_COMPLETED,
@@ -41,6 +38,9 @@ enum {
     // rfid event
 
     // weight sensor event
+
+    // Schedule events
+    EVENT_SCHEDULE_UPDATE,
 
     // data storage events
     EVENT_SAVE_FEEDING_RECORD,
