@@ -47,6 +47,11 @@ bool WiFiManager::init()
     
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    snprintf(device_id, sizeof(device_id), "PETFEEDER_%02X%02X%02X", mac[3], mac[4], mac[5]);
+    ESP_LOGI(TAG, "Device ID: %s", device_id);
     
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,           // Event base
@@ -136,26 +141,19 @@ void WiFiManager::startProvisioning()
     };
     ESP_ERROR_CHECK(wifi_prov_mgr_init(config));
     
-    uint8_t mac[6];
-    esp_wifi_get_mac(WIFI_IF_STA, mac);
-    char service_name[32];
-    snprintf(service_name, sizeof(service_name), 
-             "PROV_PETFEEDER_%02X%02X%02X", 
-             mac[3], mac[4], mac[5]);
-    
     ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(
         WIFI_PROV_SECURITY_1,  // 1 = encrypted
         NULL,                  // no password
-        service_name,          // BLE device name
+        device_id,             // BLE device name
         NULL                   // not used in BLE
     ));
-    
+
     is_provisioning = true;
-    ESP_LOGI(TAG, "BLE provisioning started with name: %s", service_name);
-    
+    ESP_LOGI(TAG, "BLE provisioning started with name: %s", device_id);
+
     // publish provisioning started event to customized event bus with device name
     provisioning_event_data_t prov_data;
-    strncpy(prov_data.device_name, service_name, sizeof(prov_data.device_name) - 1);
+    strncpy(prov_data.device_name, device_id, sizeof(prov_data.device_name) - 1);
     prov_data.device_name[sizeof(prov_data.device_name) - 1] = '\0';
     event_bus->publish(EVENT_PROVISIONING_STARTED, prov_data);
 }
@@ -248,11 +246,6 @@ void WiFiManager::ipEventHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         
         manager->is_connected = true;
-        
-        // If we were provisioning, stop it now
-        if (manager->is_provisioning) {
-            manager->stopProvisioning();
-        }
         
         // Publish WiFi connected event to custom event bus with data
         wifi_event_data_t wifi_data;

@@ -30,7 +30,6 @@ private:
     
     // Screens
     lv_obj_t* main_screen{nullptr};
-    lv_obj_t* schedule_screen{nullptr};
     lv_obj_t* feeding_screen{nullptr};
     lv_obj_t* provisioning_screen{nullptr};
     lv_obj_t* wifi_status_screen{nullptr};
@@ -40,8 +39,6 @@ private:
     lv_obj_t* food_level_label{nullptr};
     lv_obj_t* last_fed_label{nullptr};
     lv_obj_t* btn_feed_now{nullptr};
-    lv_obj_t* btn_schedule{nullptr};
-    lv_obj_t* btn_history{nullptr};
     lv_obj_t* btn_connect{nullptr};
     lv_obj_t* wifi_icon{nullptr};
     
@@ -53,12 +50,10 @@ private:
     
     // Helper methods
     void buildMainScreen();
-    void buildScheduleScreen();
     void buildFeedingScreen();
     void buildProvisioningScreen();
     void buildWiFiStatusScreen();
     void showMainScreen();
-    void showScheduleScreen();
     void showFeedingScreen();
     void showProvisioningScreen();
     void showWiFiStatusScreen();
@@ -66,8 +61,6 @@ private:
     
     // Event callbacks (LVGL button clicks)
     static void onFeedNowClicked(lv_event_t* event);
-    static void onScheduleClicked(lv_event_t* event);
-    static void onHistoryClicked(lv_event_t* event);
     static void onConnectClicked(lv_event_t* event);
     static void onBackClicked(lv_event_t* event);
     static void onResetWiFiClicked(lv_event_t* event);

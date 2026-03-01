@@ -3,14 +3,6 @@
 #include "driver/gpio.h"
 
 namespace BoardConfig {
-    // SPI Display Pins
-    // constexpr gpio_num_t LCD_SCLK = GPIO_NUM_36;
-    // constexpr gpio_num_t LCD_MOSI = GPIO_NUM_35;
-    // constexpr gpio_num_t LCD_MISO = GPIO_NUM_13;
-    // constexpr gpio_num_t LCD_DC = GPIO_NUM_6;
-    // constexpr gpio_num_t LCD_RST = GPIO_NUM_7;
-    // constexpr gpio_num_t LCD_CS = GPIO_NUM_15;
-    // constexpr gpio_num_t LCD_BACKLIGHT = GPIO_NUM_5;
 
     constexpr gpio_num_t LCD_SCLK = GPIO_NUM_21;
     constexpr gpio_num_t LCD_MOSI = GPIO_NUM_19;
@@ -23,8 +15,8 @@ namespace BoardConfig {
     // I2C Touch Pins
     constexpr gpio_num_t TOUCH_SCL = GPIO_NUM_9;
     constexpr gpio_num_t TOUCH_SDA = GPIO_NUM_8;
-    constexpr gpio_num_t TOUCH_RST = GPIO_NUM_10;
-    constexpr gpio_num_t TOUCH_INT = GPIO_NUM_11;
+    constexpr gpio_num_t TOUCH_RST = GPIO_NUM_18;
+    constexpr gpio_num_t TOUCH_INT = GPIO_NUM_17;
 
 	// Motor Pins
     constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_15;

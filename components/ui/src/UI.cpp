@@ -1,5 +1,6 @@
 #include "UI.h"
 #include "Events.h"
+#include "Types.h"
 #include "esp_log.h"
 
 static const char* TAG = "UI";
@@ -114,9 +115,9 @@ void UI::buildMainScreen()
     lv_obj_set_style_pad_all(grid_container, 0, LV_PART_MAIN);
     lv_obj_set_style_clip_corner(grid_container, true, LV_PART_MAIN);
     
-    // 2*2 grid
+    // 1*2 grid
     static lv_coord_t col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t row_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t row_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
     lv_obj_set_grid_dsc_array(grid_container, col_dsc, row_dsc);
     lv_obj_set_style_pad_column(grid_container, 10, LV_PART_MAIN);
     lv_obj_set_style_pad_row(grid_container, 10, LV_PART_MAIN);
@@ -135,35 +136,9 @@ void UI::buildMainScreen()
     lv_obj_center(feed_label);
     lv_obj_clear_flag(feed_label, LV_OBJ_FLAG_CLICKABLE);
     
-    // schedule feeding time button
-    btn_schedule = lv_btn_create(grid_container);
-    lv_obj_set_grid_cell(btn_schedule, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
-    lv_obj_set_style_bg_color(btn_schedule, lv_color_hex(0x30638E), LV_PART_MAIN);
-    lv_obj_set_style_radius(btn_schedule, 8, LV_PART_MAIN);
-    lv_obj_add_event_cb(btn_schedule, onScheduleClicked, LV_EVENT_CLICKED, this);
-    
-    lv_obj_t* schedule_label = lv_label_create(btn_schedule);
-    lv_label_set_text_static(schedule_label, LV_SYMBOL_BELL "\nSCHEDULE");
-    lv_obj_set_style_text_align(schedule_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_center(schedule_label);
-    lv_obj_clear_flag(schedule_label, LV_OBJ_FLAG_CLICKABLE);
-    
-    // check history
-    btn_history = lv_btn_create(grid_container);
-    lv_obj_set_grid_cell(btn_history, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 1, 1);
-    lv_obj_set_style_bg_color(btn_history, lv_color_hex(0x00798C), LV_PART_MAIN);
-    lv_obj_set_style_radius(btn_history, 8, LV_PART_MAIN);
-    lv_obj_add_event_cb(btn_history, onHistoryClicked, LV_EVENT_CLICKED, nullptr);
-    
-    lv_obj_t* history_label = lv_label_create(btn_history);
-    lv_label_set_text_static(history_label, LV_SYMBOL_LIST "\nHISTORY");
-    lv_obj_set_style_text_align(history_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_center(history_label);
-    lv_obj_clear_flag(history_label, LV_OBJ_FLAG_CLICKABLE);
-    
     // connect to phone
     btn_connect = lv_btn_create(grid_container);
-    lv_obj_set_grid_cell(btn_connect, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 1, 1);
+    lv_obj_set_grid_cell(btn_connect, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
     lv_obj_set_style_bg_color(btn_connect, lv_color_hex(0xEDAE49), LV_PART_MAIN);
     lv_obj_set_style_radius(btn_connect, 8, LV_PART_MAIN);
     lv_obj_add_event_cb(btn_connect, onConnectClicked, LV_EVENT_CLICKED, this);
@@ -178,27 +153,15 @@ void UI::buildMainScreen()
 void UI::onFeedNowClicked(lv_event_t* event)
 {
     ESP_LOGI(TAG, "Feed Now clicked");
-    
+
     UI* ui = (UI*)lv_event_get_user_data(event);
     if (ui) {
-        ui->event_bus->publish(EVENT_FEED_NOW_PRESSED);
+        feed_request_t request = {};
+        request.portions = 1;
+        request.source   = FEED_SOURCE_MANUAL;
+        ui->event_bus->publish(EVENT_FEED_REQUEST, request);
         ui->showFeedingScreen();
     }
-}
-
-void UI::onScheduleClicked(lv_event_t* event)
-{
-    ESP_LOGI(TAG, "Schedule clicked");
-    UI* ui = (UI*)lv_event_get_user_data(event);
-    if (ui) {
-        ui->showScheduleScreen();
-    }
-}
-
-void UI::onHistoryClicked(lv_event_t* event)
-{
-    ESP_LOGI(TAG, "History clicked");
-    
 }
 
 void UI::onConnectClicked(lv_event_t* event)
@@ -250,16 +213,6 @@ void UI::showMainScreen()
     lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_FADE_IN, 250, 0, false);
 }
 
-void UI::showScheduleScreen()
-{
-    // Lazy-build schedule screen on first access
-    if (!schedule_screen) {
-        schedule_screen = lv_obj_create(NULL);
-        buildScheduleScreen();
-    }
-    lv_scr_load_anim(schedule_screen, LV_SCR_LOAD_ANIM_FADE_IN, 250, 0, false);
-}
-
 void UI::showFeedingScreen()
 {
     // Lazy-build feeding screen on first access
@@ -295,35 +248,6 @@ void UI::showWiFiStatusScreen()
         }
     }
     lv_scr_load_anim(wifi_status_screen, LV_SCR_LOAD_ANIM_FADE_IN, 250, 0, false);
-}
-
-// Build schedule screen
-void UI::buildScheduleScreen()
-{
-    // Set background
-    lv_obj_set_style_bg_color(schedule_screen, lv_color_hex(0xF5F5F5), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(schedule_screen, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(schedule_screen, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(schedule_screen, LV_OBJ_FLAG_SCROLLABLE);
-    
-    
-    // Back button
-    lv_obj_t* back_btn = lv_btn_create(schedule_screen);
-    lv_obj_set_size(back_btn, 60, 30);
-    lv_obj_set_pos(back_btn, 5, 10);
-    lv_obj_set_style_bg_color(back_btn, lv_color_hex(0x00798C), LV_PART_MAIN);
-    lv_obj_add_event_cb(back_btn, onBackClicked, LV_EVENT_CLICKED, this);
-    
-    lv_obj_t* back_label = lv_label_create(back_btn);
-    lv_label_set_text(back_label, LV_SYMBOL_LEFT " Back");
-    lv_obj_center(back_label);
-    
-    // Content placeholder
-    lv_obj_t* content = lv_label_create(schedule_screen);
-    lv_label_set_text(content, "Schedule configuration\ncoming soon...");
-    lv_obj_set_style_text_color(content, lv_color_hex(0x30638E), LV_PART_MAIN);
-    lv_obj_set_style_text_align(content, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_align(content, LV_ALIGN_CENTER, 0, 0);
 }
 
 // Build provisioning screen
