@@ -1,6 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdint.h>
 #include "freertos/queue.h"
 
 // Feeding source
@@ -48,6 +49,14 @@ struct schedule_data_t
     uint8_t hour;
     uint8_t minute;
     uint8_t portions;
+};
+
+static constexpr uint8_t MAX_SCHEDULES = 8;
+
+struct schedule_list_t
+{
+    uint8_t count;
+    schedule_data_t schedules[MAX_SCHEDULES];
 };
 
 struct visit_data_t
