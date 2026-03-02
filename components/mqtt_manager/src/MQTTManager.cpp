@@ -50,6 +50,10 @@ bool MQTTManager::init()
     event_bus->subscribe(EVENT_WIFI_CONNECTED, onWiFiConnectedEvent, this);
     event_bus->subscribe(EVENT_WIFI_DISCONNECTED, onWiFiDisconnectedEvent, this);
     event_bus->subscribe(EVENT_FEED_COMPLETED, onFeedCompltedEvent, this);
+    event_bus->subscribe(EVENT_FOOD_LEVEL_CHANGED, onFoodLevelChangedEvent, this);
+    event_bus->subscribe(EVENT_CAT_APPROACHED, onCatApproachedEvent, this);
+    event_bus->subscribe(EVENT_CAT_LEFT, onCatLeftEvent, this);
+    event_bus->subscribe(EVENT_RFID_DETECTED, onRfidDetectedEvent, this);
     
     ESP_LOGI(TAG, "MQTT Manager initialized");
     return true;
@@ -222,7 +226,42 @@ void MQTTManager::onFeedCompltedEvent(void* arg, esp_event_base_t base,
 {
     MQTTManager* manager = static_cast<MQTTManager*>(arg);
     const feed_status_t* feed_status = static_cast<feed_status_t*>(data);
-    char payload[64];
+    char payload[32];
     snprintf(payload, sizeof(payload), "{\"type\":\"dispense\",\"amount\":%d}", feed_status->portions);
     manager->publish(manager->topic_event, payload);    
 }
+
+void MQTTManager::onRfidDetectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    const char* rfid_id = static_cast<const char*>(data);
+    char payload[32];
+    snprintf(payload, sizeof(payload), "{\"type\":\"cat_identified\",\"rfid\":\"%s\"}", rfid_id);
+    manager->publish(manager->topic_event, payload);
+}
+
+void MQTTManager::onFoodLevelChangedEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    int level = *static_cast<int*>(data);
+    char payload[32];
+    snprintf(payload, sizeof(payload), "{\"type\":\"tank_level\",\"level\":%d}", level);
+    manager->publish(manager->topic_event, payload);
+}
+
+void MQTTManager::onCatApproachedEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    char payload[32];
+    snprintf(payload, sizeof(payload), "{\"type\":\"cat_came\"}");
+    manager->publish(manager->topic_event, payload);
+}
+
+void MQTTManager::onCatLeftEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    char payload[32];
+    snprintf(payload, sizeof(payload), "{\"type\":\"cat_leave\"}");
+    manager->publish(manager->topic_event, payload);
+}
+
