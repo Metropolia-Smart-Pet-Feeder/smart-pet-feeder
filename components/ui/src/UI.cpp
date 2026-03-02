@@ -22,6 +22,8 @@ void UI::build()
     event_bus->subscribe(EVENT_WIFI_CONNECTED, onWiFiConnectedEvent, this);
     event_bus->subscribe(EVENT_WIFI_DISCONNECTED, onWiFiDisconnectedEvent, this);
     event_bus->subscribe(EVENT_PROVISIONING_STARTED, onProvisioningStartedEvent, this);
+    event_bus->subscribe(EVENT_FEED_COMPLETED, onFeedCompletedEvent, this);
+    event_bus->subscribe(EVENT_FOOD_LEVEL_CHANGED, onFoodLevelChangedEvent, this);
     
     // Create main screen
     main_screen = lv_obj_create(NULL);
@@ -73,13 +75,13 @@ void UI::buildMainScreen()
     food_level_bar = lv_bar_create(level_container);
     lv_obj_set_size(food_level_bar, 200, 12);
     lv_obj_set_pos(food_level_bar, 0, 20);  // Fixed position
-    lv_bar_set_value(food_level_bar, 75, LV_ANIM_OFF);
+    lv_bar_set_value(food_level_bar, 0, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(food_level_bar, lv_color_hex(0xEDAE49), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(food_level_bar, lv_color_hex(0x003D5B), LV_PART_MAIN);
     lv_obj_clear_flag(food_level_bar, LV_OBJ_FLAG_CLICKABLE);
     
     food_level_label = lv_label_create(level_container);
-    lv_label_set_text(food_level_label, "75% (1.5kg)");
+    lv_label_set_text(food_level_label, "Unknown");
     lv_obj_set_style_text_color(food_level_label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_pos(food_level_label, 0, 38);  // Fixed position
     lv_obj_clear_flag(food_level_label, LV_OBJ_FLAG_CLICKABLE);
@@ -101,7 +103,7 @@ void UI::buildMainScreen()
     lv_obj_clear_flag(last_fed_title, LV_OBJ_FLAG_CLICKABLE);
     
     last_fed_label = lv_label_create(last_fed_container);
-    lv_label_set_text(last_fed_label, "Jan 4, 2:30 PM (2h ago)");
+    lv_label_set_text(last_fed_label, "No feeding yet");
     lv_obj_set_style_text_color(last_fed_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_set_pos(last_fed_label, 0, 24);  // Fixed position
     lv_obj_clear_flag(last_fed_label, LV_OBJ_FLAG_CLICKABLE);
@@ -148,6 +150,8 @@ void UI::buildMainScreen()
     lv_obj_set_style_text_align(connect_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
     lv_obj_center(connect_label);
     lv_obj_clear_flag(connect_label, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_timer_create(onLastFedTimer, 30000, this);
 }
 
 void UI::onFeedNowClicked(lv_event_t* event)
@@ -366,16 +370,10 @@ void UI::onWiFiConnectedEvent(void* arg, esp_event_base_t base, int32_t id, void
     UI* ui = (UI*)arg;
     if (ui && data) {
         wifi_event_data_t* wifi_data = (wifi_event_data_t*)data;
-        
         ui->is_wifi_connected = true;
         strncpy(ui->wifi_ssid, wifi_data->ssid, sizeof(ui->wifi_ssid) - 1);
         ui->wifi_ssid[sizeof(ui->wifi_ssid) - 1] = '\0';
-        ui->updateWiFiIcon();
-        
-        // If we're on the provisioning screen, switch to status screen
-        if (lv_scr_act() == ui->provisioning_screen) {
-            ui->showWiFiStatusScreen();
-        }
+        lv_async_call(updateWiFiUI, ui);
     }
 }
 
@@ -385,7 +383,7 @@ void UI::onWiFiDisconnectedEvent(void* arg, esp_event_base_t base, int32_t id, v
     if (ui) {
         ui->is_wifi_connected = false;
         ui->wifi_ssid[0] = '\0';
-        ui->updateWiFiIcon();
+        lv_async_call(updateWiFiUI, ui);
     }
 }
 
@@ -394,11 +392,98 @@ void UI::onProvisioningStartedEvent(void* arg, esp_event_base_t base, int32_t id
     UI* ui = (UI*)arg;
     if (ui && data) {
         provisioning_event_data_t* prov_data = (provisioning_event_data_t*)data;
-        // Update device name label if provisioning screen exists
-        if (ui->prov_device_name_label) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "Device Name:\n%s", prov_data->device_name);
-            lv_label_set_text(ui->prov_device_name_label, buf);
-        }
+        strncpy(ui->pending_device_name, prov_data->device_name, sizeof(ui->pending_device_name) - 1);
+        ui->pending_device_name[sizeof(ui->pending_device_name) - 1] = '\0';
+        lv_async_call(updateProvisioningUI, ui);
+    }
+}
+
+void UI::onFeedCompletedEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    UI* ui = (UI*)arg;
+    if (ui && data) {
+        feed_status_t* status  = (feed_status_t*)data;
+        ui->last_feed_ms       = lv_tick_get();
+        ui->last_feed_portions = status->portions;
+        lv_async_call(updateFeedCompletedUI, ui);
+    }
+}
+
+void UI::updateWiFiUI(void* arg)
+{
+    UI* ui = (UI*)arg;
+    ui->updateWiFiIcon();
+    if (ui->is_wifi_connected && lv_scr_act() == ui->provisioning_screen) {
+        ui->showWiFiStatusScreen();
+    }
+}
+
+void UI::updateProvisioningUI(void* arg)
+{
+    UI* ui = (UI*)arg;
+    if (ui->prov_device_name_label) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Device Name:\n%s", ui->pending_device_name);
+        lv_label_set_text(ui->prov_device_name_label, buf);
+    }
+}
+
+void UI::updateFeedCompletedUI(void* arg)
+{
+    UI* ui = (UI*)arg;
+    if (ui->last_fed_label) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "Just now - %d portion%s",
+                 ui->last_feed_portions, ui->last_feed_portions == 1 ? "" : "s");
+        lv_label_set_text(ui->last_fed_label, buf);
+    }
+    if (lv_scr_act() == ui->feeding_screen) {
+        ui->showMainScreen();
+    }
+}
+
+void UI::onLastFedTimer(lv_timer_t* timer)
+{
+    UI* ui = (UI*)timer->user_data;
+    if (!ui || !ui->last_fed_label || ui->last_feed_ms == 0) return;
+
+    uint32_t elapsed_ms  = lv_tick_get() - ui->last_feed_ms;
+    uint32_t elapsed_min = elapsed_ms / 60000;
+    uint32_t elapsed_hr  = elapsed_min / 60;
+
+    char buf[40];
+    if (elapsed_min < 1) {
+        snprintf(buf, sizeof(buf), "Just now - %d portion%s",
+                 ui->last_feed_portions, ui->last_feed_portions == 1 ? "" : "s");
+    } else if (elapsed_hr < 1) {
+        snprintf(buf, sizeof(buf), "%lu min ago - %d portion%s",
+                 elapsed_min, ui->last_feed_portions, ui->last_feed_portions == 1 ? "" : "s");
+    } else {
+        snprintf(buf, sizeof(buf), "%luh ago - %d portion%s",
+                 elapsed_hr, ui->last_feed_portions, ui->last_feed_portions == 1 ? "" : "s");
+    }
+    lv_label_set_text(ui->last_fed_label, buf);
+}
+
+void UI::onFoodLevelChangedEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    UI* ui = (UI*)arg;
+    if (ui && data) {
+        ui->pending_food_level = *(int*)data;
+        lv_async_call(updateFoodLevelUI, ui);
+    }
+}
+
+void UI::updateFoodLevelUI(void* arg)
+{
+    UI* ui = (UI*)arg;
+    const int bar_values[]     = { 0, 25, 50, 75, 100 };
+    const char* level_labels[] = { "Empty", "Low", "Medium", "High", "Full" };
+    int idx = (ui->pending_food_level >= 1 && ui->pending_food_level <= 4) ? ui->pending_food_level : 0;
+    if (ui->food_level_bar) {
+        lv_bar_set_value(ui->food_level_bar, bar_values[idx], LV_ANIM_ON);
+    }
+    if (ui->food_level_label) {
+        lv_label_set_text(ui->food_level_label, level_labels[idx]);
     }
 }
