@@ -68,6 +68,7 @@ esp_err_t Display::initPanel()
     if (config.invert_colors) {
         esp_lcd_panel_io_tx_param(panel_io_handle, 0x21, nullptr, 0); 
     }
+    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, config.swap_xy));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, config.mirror_x, config.mirror_y));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
     return ESP_OK;

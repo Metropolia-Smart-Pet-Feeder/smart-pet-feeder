@@ -81,7 +81,7 @@ extern "C" void app_main()
         BoardConfig::LCD_MOSI,
         BoardConfig::LCD_MISO,
         BoardConfig::LCD_SCLK,
-        240 * 320 * 2 + 8
+        BoardConfig::LCD_WIDTH * BoardConfig::LCD_HEIGHT * 2 + 8
     );
     ESP_ERROR_CHECK(spi_bus->init());
     ESP_LOGI(TAG, "SPI bus initialized");
@@ -107,24 +107,25 @@ extern "C" void app_main()
         .pixel_clock_hz = 10 * 1000 * 1000,
         .queue_depth = 10,
         .mirror_x = true,
-        .mirror_y = false,
+        .mirror_y = true,
+        .swap_xy = true,
         .invert_colors = true
     };
     auto display = std::make_shared<Display>(spi_bus, display_config);
     ESP_ERROR_CHECK(display->init());
     ESP_LOGI(TAG, "Display initialized");
-    
+
     // Initialize touch driver
     TouchDriver::Config touch_config = {
         .int_pin = BoardConfig::TOUCH_INT,
         .rst_pin = BoardConfig::TOUCH_RST,
         .device_addr = 0x38,
         .clk_hz = 100000,
-        .max_x = BoardConfig::LCD_WIDTH,
-        .max_y = BoardConfig::LCD_HEIGHT,
-        .swap_xy = false,
+        .max_x = BoardConfig::LCD_HEIGHT,   // physical touch width (portrait: 240)
+        .max_y = BoardConfig::LCD_WIDTH,    // physical touch height (portrait: 320)
+        .swap_xy = true,
         .mirror_x = false,
-        .mirror_y = false
+        .mirror_y = true
     };
     auto touch = std::make_shared<TouchDriver>(i2c_bus, touch_config);
     ESP_ERROR_CHECK(touch->init());
