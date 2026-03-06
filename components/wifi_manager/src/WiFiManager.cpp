@@ -4,6 +4,7 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "wifi_provisioning/scheme_ble.h"
+#include "esp_sntp.h"
 #include <cstring>
 #include "Types.h"
 
@@ -246,7 +247,14 @@ void WiFiManager::ipEventHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         
         manager->is_connected = true;
-        
+
+        if (!esp_sntp_enabled()) {
+            esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+            esp_sntp_setservername(0, "pool.ntp.org");
+            esp_sntp_init();
+            ESP_LOGI(TAG, "SNTP started");
+        }
+
         // Publish WiFi connected event to custom event bus with data
         wifi_event_data_t wifi_data;
         strncpy(wifi_data.ssid, manager->current_ssid, sizeof(wifi_data.ssid));

@@ -57,6 +57,7 @@ struct schedule_list_t
 {
     uint8_t count;
     schedule_data_t schedules[MAX_SCHEDULES];
+    int16_t utc_offset_minutes;
 };
 
 struct visit_data_t
