@@ -15,16 +15,12 @@
 #include "DispenseControl.h"
 #include "RC522.h"
 #include "food_container.h"
-#include "motion_detection.h"  
+#include "motion_detection.h"
+#include "Scheduler.h"
 #include <memory>
 
 static const char* TAG = "main";
 
-static void onFeedRequest(void* arg, esp_event_base_t base, int32_t id, void* data)
-{
-    auto* request = static_cast<feed_request_t*>(data);
-    ESP_LOGI(TAG, "Feed request received: %d portions, source=%d", request->portions, request->source);
-}
 
 extern "C" void app_main()
 {
@@ -72,7 +68,29 @@ extern "C" void app_main()
     }
     ESP_LOGI(TAG, "MQTT Manager initialized");
 
-    event_bus->subscribe(EVENT_FEED_REQUEST, onFeedRequest, nullptr);
+    // Initialize Scheduler
+    auto scheduler = std::make_shared<Scheduler>(event_bus);
+    scheduler->init();
+    ESP_LOGI(TAG, "Scheduler initialized");
+
+    // Initialize DispenseControl
+    DispenseControl::Config dispense_config = {
+        .default_portions       = 1,
+        .steps_per_portion      = 100,
+        .motor_rpm              = 20,
+        .operation_timeout_ms   = 10000,
+        .portion_delay_ms       = 1000,
+        .min_food_level_percent = 0,
+        .motor_config = {
+            .step_pin           = BoardConfig::MOTOR_STEP,
+            .dir_pin            = BoardConfig::MOTOR_DIR,
+            .steps_per_rev      = 400,
+            .rmt_resolution_hz  = 1000000
+        }
+    };
+    auto dispense = std::make_shared<DispenseControl>(event_bus, dispense_config);
+    ESP_ERROR_CHECK(dispense->init());
+    ESP_LOGI(TAG, "DispenseControl initialized");
     
     
     // Create and initialize SPI bus for display

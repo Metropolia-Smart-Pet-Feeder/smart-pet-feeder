@@ -1,10 +1,10 @@
 idf_component_register(
     SRCS 
-        
-
+        "src/Scheduler.cpp"
     INCLUDE_DIRS 
         "include"
-
     REQUIRES 
-       
+        event_bus
+        common
+        nvs_flash
 )

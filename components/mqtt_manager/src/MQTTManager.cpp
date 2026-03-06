@@ -169,7 +169,9 @@ void MQTTManager::mqttEventHandler(void* handler_args, esp_event_base_t base, in
                         list.schedules[i].minute   = static_cast<uint8_t>(cJSON_GetObjectItem(entry, "minute")->valueint);
                         list.schedules[i].portions = static_cast<uint8_t>(cJSON_GetObjectItem(entry, "amount")->valueint);
                     }
-                    ESP_LOGI(TAG, "Schedule command: %d entries", list.count);
+                    const cJSON* tz = cJSON_GetObjectItem(root, "utc_offset_minutes");
+                    list.utc_offset_minutes = tz ? static_cast<int16_t>(tz->valueint) : 0;
+                    ESP_LOGI(TAG, "Schedule command: %d entries, UTC offset: %d min", list.count, list.utc_offset_minutes);
                     manager->event_bus->publish(EVENT_SCHEDULE_UPDATE, list);
                 }
 
