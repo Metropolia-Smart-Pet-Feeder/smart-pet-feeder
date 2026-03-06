@@ -13,6 +13,7 @@ public:
     {
         gpio_num_t step_pin;
         gpio_num_t dir_pin;
+        gpio_num_t sleep_pin;
         uint32_t steps_per_rev;
         uint32_t rmt_resolution_hz;
     };
@@ -23,6 +24,8 @@ public:
     esp_err_t init();
     esp_err_t move(uint32_t steps, uint8_t direction, uint32_t rpm, uint32_t timeout_ms = portMAX_DELAY) const;
     [[nodiscard]] uint32_t degreesToSteps(float degrees) const;
+    void wake();
+    void sleep();
 
 private:
     static const char* TAG;

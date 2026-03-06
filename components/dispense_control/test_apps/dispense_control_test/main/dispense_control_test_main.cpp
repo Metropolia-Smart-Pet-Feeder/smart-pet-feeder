@@ -177,6 +177,7 @@ extern "C" void app_main()
         .motor_config = {
             .step_pin = BoardConfig::MOTOR_STEP,
             .dir_pin = BoardConfig::MOTOR_DIR,
+            .sleep_pin = BoardConfig::MOTOR_SLEEP,
             .steps_per_rev = 400,
             .rmt_resolution_hz = 1000000
         }
