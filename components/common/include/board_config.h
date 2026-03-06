@@ -35,9 +35,9 @@ namespace BoardConfig {
     constexpr gpio_num_t SCALE_2 = GPIO_NUM_39;
 
     // motor control pins
-    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_14;
-    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_10;
-    constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_46;
+    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_10;
+    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_46;
+    constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_45;
 
     // SPI to P4 pins
     constexpr gpio_num_t P4_SCLK = GPIO_NUM_12;
