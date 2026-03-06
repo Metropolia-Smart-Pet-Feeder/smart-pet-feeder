@@ -49,6 +49,7 @@ public:
         uint8_t queue_depth;
         bool mirror_x;
         bool mirror_y;
+        bool swap_xy;
         bool invert_colors;
     };
 

@@ -49,9 +49,8 @@ namespace BoardConfig {
 
     // 
 
-    // Display Settings
-    constexpr int LCD_WIDTH = 240;
-    constexpr int LCD_HEIGHT = 320;
+    constexpr int LCD_WIDTH = 320;
+    constexpr int LCD_HEIGHT = 240;
     constexpr size_t LCD_MAX_TRANSFER_SIZE = (LCD_WIDTH * LCD_HEIGHT * sizeof(uint16_t));
     constexpr int LCD_PIXEL_CLOCK_HZ = 10 * 1000 * 1000;
     constexpr int LCD_CMD_BITS = 8;

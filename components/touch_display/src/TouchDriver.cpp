@@ -128,6 +128,7 @@ void TouchDriver::readHardware() {
         last_x = xs[0];
         last_y = ys[0];
         last_touched = true;
+        // ESP_LOGI(TAG, "Touch: x=%d, y=%d", last_x, last_y);
     } else {
         last_touched = false;
     }
