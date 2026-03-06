@@ -55,7 +55,8 @@ extern "C" void app_main()
         .pixel_clock_hz = 10 * 1000 * 1000,
         .queue_depth = 10,
         .mirror_x = true,
-        .mirror_y = false,
+        .mirror_y = true,
+        .swap_xy = true,
         .invert_colors = true
     };
     auto display = std::make_shared<Display>(spi_bus, display_config);
@@ -68,11 +69,11 @@ extern "C" void app_main()
         .rst_pin = BoardConfig::TOUCH_RST,
         .device_addr = 0x38,
         .clk_hz = 100000,
-        .max_x = BoardConfig::LCD_WIDTH,
-        .max_y = BoardConfig::LCD_HEIGHT,
-        .swap_xy = false,
+        .max_x = BoardConfig::LCD_HEIGHT,   // physical touch width before swap (240)
+        .max_y = BoardConfig::LCD_WIDTH,    // physical touch height before swap (320)
+        .swap_xy = true,
         .mirror_x = false,
-        .mirror_y = false
+        .mirror_y = true
     };
     auto touch = std::make_shared<TouchDriver>(i2c_bus, touch_config);
     ESP_ERROR_CHECK(touch->init());
