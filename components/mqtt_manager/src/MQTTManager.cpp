@@ -54,6 +54,7 @@ bool MQTTManager::init()
     event_bus->subscribe(EVENT_CAT_APPROACHED, onCatApproachedEvent, this);
     event_bus->subscribe(EVENT_CAT_LEFT, onCatLeftEvent, this);
     event_bus->subscribe(EVENT_RFID_DETECTED, onRfidDetectedEvent, this);
+    event_bus->subscribe(EVENT_FOOD_EATEN, onFoodEatenEvent, this);
     
     ESP_LOGI(TAG, "MQTT Manager initialized");
     return true;
@@ -267,3 +268,11 @@ void MQTTManager::onCatLeftEvent(void* arg, esp_event_base_t base, int32_t id, v
     manager->publish(manager->topic_event, payload);
 }
 
+void MQTTManager::onFoodEatenEvent(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    MQTTManager* manager = static_cast<MQTTManager*>(arg);
+    float food_eaten = *static_cast<float*>(data);
+    char payload[64];
+    snprintf(payload, sizeof(payload), "{\"type\":\"food_eaten\",\"amount\":%f}", food_eaten);
+    manager->publish(manager->topic_event, payload);    
+}

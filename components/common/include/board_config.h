@@ -31,8 +31,10 @@ namespace BoardConfig {
     constexpr gpio_num_t IR_MOTION_RIGHT = GPIO_NUM_6;
 
     // weight sensor pins
-    constexpr gpio_num_t SCALE_1 = GPIO_NUM_40;
-    constexpr gpio_num_t SCALE_2 = GPIO_NUM_39;
+    constexpr gpio_num_t SCALE_DOUT     = GPIO_NUM_40;
+    constexpr gpio_num_t SCALE_SCK      = GPIO_NUM_39;
+    constexpr float      SCALE_FACTOR   = 110.16f;
+    constexpr float      SCALE_THRESHOLD_G = 2.0f;
 
     // motor control pins
     constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_10;

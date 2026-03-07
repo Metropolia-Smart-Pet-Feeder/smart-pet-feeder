@@ -8,7 +8,7 @@
 #define TAG "HX711"
 
 HX711::HX711()
-    : _sck(GPIO_NUM_15), _dout(GPIO_NUM_14), _gain(eGAIN_128),
+    : _sck(GPIO_NUM_NC), _dout(GPIO_NUM_NC), _gain(eGAIN_128),
       _offset(0), _scale(1.0f),
       _offsetA(0), _offsetB(0), _scaleA(1.0f), _scaleB(1.0f)
 {}

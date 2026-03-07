@@ -66,17 +66,6 @@ struct visit_data_t
     char name[32];
 };
 
-struct eating_data_t
-{
-    uint32_t timestamp;
-    uint8_t portions;
-};
-
-struct food_level_data_t
-{
-    uint8_t percentage;
-};
-
 struct wifi_event_data_t
 {
     char ssid[33];
