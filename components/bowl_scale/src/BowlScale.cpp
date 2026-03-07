@@ -26,7 +26,7 @@ void BowlScale::start()
     last_weight = hx711.getUnitsChannelA(10) + hx711.getUnitsChannelB(10);
     ESP_LOGI(TAG, "Tared. Initial weight: %.1f g", last_weight);
 
-    xTaskCreate(taskEntry, "bowl_scale_task", 4096, this, 5, &task_handle);
+    xTaskCreatePinnedToCore(taskEntry, "bowl_scale_task", 4096, this, 5, &task_handle, APP_CPU_NUM);
 }
 
 void BowlScale::stop()
