@@ -5,5 +5,5 @@ idf_component_register(
     INCLUDE_DIRS 
         "include"
     REQUIRES 
-        event_bus common
+        event_bus common driver
 )
