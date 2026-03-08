@@ -27,7 +27,7 @@ extern "C" void app_main() {
     };
     uart_param_config(UART_NUM_0, &uart_config);
 
-    camera_ov2640 cam(80);
+    /*camera_ov2640 cam(80);
 
     if (cam.get_ret() != ESP_OK) {
         ESP_LOGE("main", "camera init error");
@@ -60,5 +60,21 @@ extern "C" void app_main() {
             }
         }
         vTaskDelay(pdMS_TO_TICKS(3000));
+    }*/
+    auto cam = std::make_shared<camera_ov2640>(15);
+    if(cam -> get_ret() != ESP_OK){
+        ESP_LOGE(TAG, "camera init failed");
+        esp_restart;
+    }
+
+
+    // 启动采集任务
+    xTaskCreate(camera_task, "cam_task", 4096, cam.get(), 5, nullptr);
+
+    auto sender = std::make_shared<ImageSender>(cam);
+    sender->setTestMode(false);
+    sender->start();
+    while(true){
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
