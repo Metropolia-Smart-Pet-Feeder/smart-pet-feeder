@@ -1,5 +1,5 @@
 /*
- * ESP32-P4 Camera Web Viewer
+* ESP32-P4 Camera Web Viewer
  *
  * 这个示例启动一个 Web 服务器,让你可以在浏览器中查看摄像头图像
  */
@@ -27,7 +27,7 @@ extern "C" void app_main() {
     };
     uart_param_config(UART_NUM_0, &uart_config);
 
-    camera_ov2640 cam(5);
+    camera_ov2640 cam(80);
 
     if (cam.get_ret() != ESP_OK) {
         ESP_LOGE("main", "摄像头初始化失败");
@@ -35,27 +35,31 @@ extern "C" void app_main() {
     }
 
     // 启动采集任务
-    xTaskCreate(camera_task, "cam_task", 4096, &cam, 1, nullptr);
+    xTaskCreate(camera_task, "cam_task", 8192, &cam, 1, nullptr);
 
     // 读取JPEG
     while (1) {
         uint32_t size;
         const uint8_t* jpeg = cam.get_latest_jpeg(&size);
         if (jpeg && size > 0) {
-            // JPEG数据
-            printf("JPEG_START\n");
-            for (uint32_t i = 0; i < size; i++)
-            {
-                printf("%02x", jpeg[i]);
-                if ((i + 1) % 1024 == 0)
-                {
-                    printf("\n");
-                    fflush(stdout);
-                    vTaskDelay(pdMS_TO_TICKS(5));
+            // 先拷贝到本地，避免读取期间被覆盖
+            uint8_t* local_buf = (uint8_t*)malloc(size);
+            if (local_buf) {
+                memcpy(local_buf, jpeg, size);
+
+                printf("JPEG_START\n");
+                for (uint32_t i = 0; i < size; i++) {
+                    printf("%02x", local_buf[i]);
+                    if ((i + 1) % 1024 == 0) {
+                        printf("\n");
+                        fflush(stdout);
+                        vTaskDelay(pdMS_TO_TICKS(5));
+                    }
                 }
+                printf("\nJPEG_END\n");
+                free(local_buf);
             }
-            printf("\nJPEG_END\n");
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }

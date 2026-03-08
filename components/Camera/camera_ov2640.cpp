@@ -174,6 +174,7 @@ camera_ov2640::camera_ov2640(int quantity)
 cleanup:
     if (!init_success)
     {
+        // 按相反顺序清理资源
         for (int i = 0; i < BUFFER_POOL_SIZE; i++)
         {
             if (jpeg_buffer_pool[i] != nullptr)
@@ -296,6 +297,8 @@ camera_ov2640::~camera_ov2640()
     ESP_LOGI(TAG, "camera_ov2640 destroyed");
 }
 
+
+
 void camera_ov2640::get_data()
 {
     while (1)
@@ -303,6 +306,7 @@ void camera_ov2640::get_data()
 
         if (xSemaphoreTake(sem, portMAX_DELAY) == pdTRUE)
         {
+            is_busy = true;
             esp_cache_msync(cam_trans.buffer, cam_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             uint32_t jpeg_size = 0;
             size_t buf_capacity = CONFIG_EXAMPLE_CAM_HRES_OV2640 * CONFIG_EXAMPLE_CAM_VRES_OV2640;
@@ -321,10 +325,12 @@ void camera_ov2640::get_data()
             if (ret == ESP_OK && jpeg_size > 0)
             {
                 jpeg_size_pool[current_write_idx] = jpeg_size;
-                xQueueSend(jpeg_queue, &current_write_idx, 0);
+                xQueueOverwrite(jpeg_queue, &current_write_idx);
                 current_write_idx = (current_write_idx + 1) % BUFFER_POOL_SIZE;
             }
+            is_busy = false;
         }
+
     }
 }
 
@@ -359,7 +365,13 @@ bool camera_ov2640::s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, es
 {
     // 此处中断 发送信号通知get_data有新数据
     camera_ov2640* self = static_cast<camera_ov2640*>(user_data);
-    xSemaphoreGive(self->sem); // 通知帧已准备好
+    if (!self->is_busy)
+    {
+        BaseType_t higher_priority_task_woken = pdFALSE;
+        xSemaphoreGiveFromISR(self->sem, &higher_priority_task_woken);
+        portYIELD_FROM_ISR(higher_priority_task_woken);  // 如果唤醒了高优先级任务则立即切换
+    }
+    // 通知帧已准备好
     return false;
 }
 
