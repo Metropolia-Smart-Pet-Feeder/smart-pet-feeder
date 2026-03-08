@@ -36,10 +36,16 @@ namespace BoardConfig {
     constexpr float      SCALE_FACTOR   = 110.16f;
     constexpr float      SCALE_THRESHOLD_G = 2.0f;
 
-    // motor control pins
-    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_10;
-    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_46;
-    constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_45;
+    // motor control pins (old driver board)
+    // constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_7;
+    // constexpr gpio_num_t MOTOR_STEP  = GPIO_NUM_10;
+    // constexpr gpio_num_t MOTOR_DIR   = GPIO_NUM_45;
+
+    // 4-wire stepper motor pins
+    constexpr gpio_num_t STEPPER_IN1 = GPIO_NUM_7;
+    constexpr gpio_num_t STEPPER_IN2 = GPIO_NUM_10;
+    constexpr gpio_num_t STEPPER_IN3 = GPIO_NUM_14;
+    constexpr gpio_num_t STEPPER_IN4 = GPIO_NUM_45;
 
     // SPI to P4 pins
     constexpr gpio_num_t P4_SCLK = GPIO_NUM_12;

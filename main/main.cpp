@@ -74,6 +74,7 @@ extern "C" void app_main()
     scheduler.init();
     ESP_LOGI(TAG, "Scheduler initialized");
 
+    // Old 12V motor
     // // Initialize DispenseControl
     // DispenseControl::Config dispense_config = {
     //     .default_portions       = 1,
@@ -93,8 +94,27 @@ extern "C" void app_main()
     // DispenseControl dispense(event_bus, dispense_config);
     // ESP_ERROR_CHECK(dispense.init());
     // ESP_LOGI(TAG, "DispenseControl initialized");
-    
-    
+
+    // New 5V motor
+    DispenseControl::Config dispense_config = {
+        .default_portions       = 1,
+        .steps_per_portion      = 512,
+        .motor_rpm              = 15,
+        .operation_timeout_ms   = 10000,
+        .portion_delay_ms       = 1000,
+        .min_food_level_percent = 0,
+        .motor_config = {
+            .in1_pin       = BoardConfig::STEPPER_IN1,
+            .in2_pin       = BoardConfig::STEPPER_IN2,
+            .in3_pin       = BoardConfig::STEPPER_IN3,
+            .in4_pin       = BoardConfig::STEPPER_IN4,
+            .steps_per_rev = 4096
+        }
+    };
+    auto dispense = std::make_shared<DispenseControl>(event_bus, dispense_config);
+    ESP_ERROR_CHECK(dispense->init());
+    ESP_LOGI(TAG, "DispenseControl initialized");
+
     // Create and initialize SPI bus for display
     auto spi_bus = std::make_shared<SPIBus>(
         SPI3_HOST,
