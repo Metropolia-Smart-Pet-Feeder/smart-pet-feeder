@@ -51,8 +51,11 @@ camera_ov2640::camera_ov2640(int quantity)
         gpio_set_level(static_cast<gpio_num_t>(CAM_PIN_RESET), 1); // RESET high
         vTaskDelay(pdMS_TO_TICKS(100));
 
+        gpio_pullup_en((gpio_num_t)EXAMPLE_ISP_DVP_CAM_SCCB_SDA_IO);
+        gpio_pullup_en((gpio_num_t)EXAMPLE_ISP_DVP_CAM_SCCB_SCL_IO);
+
         example_sensor_config_t cam_sensor_config = {
-            .i2c_port_num = I2C_NUM_0,
+            .i2c_port_num = I2C_NUM_1,
             .i2c_sda_io_num = EXAMPLE_ISP_DVP_CAM_SCCB_SDA_IO,
             .i2c_scl_io_num = EXAMPLE_ISP_DVP_CAM_SCCB_SCL_IO,
             .port = ESP_CAM_SENSOR_DVP,
