@@ -38,6 +38,7 @@ extern "C" {
 #define EXAMPLE_ISP_DVP_CAM_DE_IO              (4) // HREF
 #define EXAMPLE_ISP_DVP_CAM_VSYNC_IO           (8)
 #define EXAMPLE_ISP_DVP_CAM_HSYNC_IO           (-1)
+#define CAM_PIN_PWDN    (3)
 
 
 
