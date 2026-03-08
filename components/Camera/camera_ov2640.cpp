@@ -41,12 +41,11 @@ camera_ov2640::camera_ov2640(int quantity)
 
         //--------Camera Sensor and SCCB Init-----------//
         gpio_config_t conf = {};
-        conf.pin_bit_mask = 1ULL << CAM_PIN_RESET;
+        conf.pin_bit_mask = (1ULL << CAM_PIN_RESET) | (1ULL << CAM_PIN_PWDN);
         conf.mode = GPIO_MODE_OUTPUT;
         gpio_config(&conf);
 
-        // pwdn pin low
-        gpio_set_level((gpio_num_t)CAM_PIN_PWDN, 0);
+        gpio_set_level((gpio_num_t)CAM_PIN_PWDN, 0); // PWDN low
 
         gpio_set_level((gpio_num_t)CAM_PIN_RESET, 0); // RESET low
         vTaskDelay(pdMS_TO_TICKS(10));
