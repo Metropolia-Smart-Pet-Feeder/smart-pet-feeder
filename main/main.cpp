@@ -9,6 +9,7 @@
 #include "camera_ov2640.h"
 #include "esp_http_server.h"
 #include "driver/uart.h"
+#include "image_sender.h"
 
 static const char* TAG = "cam_main";
 
@@ -64,7 +65,7 @@ extern "C" void app_main() {
     auto cam = std::make_shared<camera_ov2640>(15);
     if(cam -> get_ret() != ESP_OK){
         ESP_LOGE(TAG, "camera init failed");
-        esp_restart;
+        return;
     }
 
 
