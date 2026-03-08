@@ -26,7 +26,7 @@ class camera_ov2640
 {
 private:
     volatile bool is_busy = false;
-    esp_cam_ctlr_trans_t cam_trans = {}; // 摄像头传输结构体
+    esp_cam_ctlr_trans_t cam_trans = {};
     esp_err_t ret = ESP_FAIL; // 错误码
     int quantity = IMAGE_QUALITY; // JPEG
     SemaphoreHandle_t sem;
@@ -39,10 +39,10 @@ private:
     esp_ldo_channel_handle_t ldo_mipi_phy = nullptr;
 
     static const int BUFFER_POOL_SIZE = 1;
-    uint8_t* jpeg_buffer_pool[BUFFER_POOL_SIZE];  // 预分配的JPEG缓冲区
-    uint32_t jpeg_size_pool[BUFFER_POOL_SIZE];    // 每个缓冲区的数据大小
-    int current_write_idx = 0;                     // 当前写入索引
-    QueueHandle_t jpeg_queue;                      // 队列存储可用帧的索引
+    uint8_t* jpeg_buffer_pool[BUFFER_POOL_SIZE];
+    uint32_t jpeg_size_pool[BUFFER_POOL_SIZE];
+    int current_write_idx = 0;
+    QueueHandle_t jpeg_queue;
 
 public:
     camera_ov2640(int quantity);

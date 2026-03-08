@@ -45,10 +45,10 @@ camera_ov2640::camera_ov2640(int quantity)
         conf.mode = GPIO_MODE_OUTPUT;
         gpio_config(&conf);
 
-        gpio_set_level((gpio_num_t)CAM_PIN_RESET, 0); // 先复位 (RESET low)
+        gpio_set_level((gpio_num_t)CAM_PIN_RESET, 0); // RESET low
         vTaskDelay(pdMS_TO_TICKS(10));
 
-        gpio_set_level(static_cast<gpio_num_t>(CAM_PIN_RESET), 1); // 释放复位 (RESET high)
+        gpio_set_level(static_cast<gpio_num_t>(CAM_PIN_RESET), 1); // RESET high
         vTaskDelay(pdMS_TO_TICKS(100));
 
         example_sensor_config_t cam_sensor_config = {
@@ -174,7 +174,6 @@ camera_ov2640::camera_ov2640(int quantity)
 cleanup:
     if (!init_success)
     {
-        // 按相反顺序清理资源
         for (int i = 0; i < BUFFER_POOL_SIZE; i++)
         {
             if (jpeg_buffer_pool[i] != nullptr)
@@ -196,7 +195,7 @@ cleanup:
             esp_cam_ctlr_disable(cam_handle);
             if (cam_trans.buffer != nullptr)
             {
-                free(cam_trans.buffer); // 或使用正确的释放函数
+                free(cam_trans.buffer);
             }
             esp_cam_ctlr_del(cam_handle);
             cam_handle = nullptr;
@@ -232,7 +231,7 @@ cleanup:
 
 camera_ov2640::~camera_ov2640()
 {
-    // 0. 删除 JPEG 队列和缓冲区
+    // 0. del JPEG buffer pool and queue
     if (jpeg_queue != nullptr)
     {
         vQueueDelete(jpeg_queue);
@@ -248,28 +247,28 @@ camera_ov2640::~camera_ov2640()
         }
     }
 
-    // 1. 停止摄像头
+    // 1. stop and disable camera controller
     if (cam_handle != nullptr)
     {
         esp_cam_ctlr_stop(cam_handle);
         esp_cam_ctlr_disable(cam_handle);
     }
 
-    // 2. 释放摄像头缓冲区
+    // 2. release camera buffer
     if (cam_trans.buffer != nullptr)
     {
         free(cam_trans.buffer);
         cam_trans.buffer = nullptr;
     }
 
-    // 3. 删除摄像头控制器
+    // 3. del camera control
     if (cam_handle != nullptr)
     {
         esp_cam_ctlr_del(cam_handle);
         cam_handle = nullptr;
     }
 
-    // 4. 禁用并删除ISP处理器
+    // 4. stop and del ISP processor
     if (isp_proc != nullptr)
     {
         esp_isp_disable(isp_proc);
@@ -277,17 +276,17 @@ camera_ov2640::~camera_ov2640()
         isp_proc = nullptr;
     }
 
-    // 5. 删除传感器
+    // 5. del seneor
     example_sensor_deinit(sensor_handle);
 
-    // 6. 释放LDO通道
+    // 6. relax LDO channel
     if (ldo_mipi_phy != nullptr)
     {
         esp_ldo_release_channel(ldo_mipi_phy);
         ldo_mipi_phy = nullptr;
     }
 
-    // 7. 删除信号量
+    // 7. del sem
     if (sem != nullptr)
     {
         vSemaphoreDelete(sem);

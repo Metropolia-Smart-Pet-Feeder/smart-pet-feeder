@@ -1,7 +1,7 @@
 /*
 * ESP32-P4 Camera Web Viewer
  *
- * 这个示例启动一个 Web 服务器,让你可以在浏览器中查看摄像头图像
+ * example
  */
 
 #include <memory>
@@ -30,19 +30,18 @@ extern "C" void app_main() {
     camera_ov2640 cam(80);
 
     if (cam.get_ret() != ESP_OK) {
-        ESP_LOGE("main", "摄像头初始化失败");
+        ESP_LOGE("main", "camera init error");
         return;
     }
 
-    // 启动采集任务
+    // task
     xTaskCreate(camera_task, "cam_task", 8192, &cam, 1, nullptr);
 
-    // 读取JPEG
+    // read JPEG
     while (1) {
         uint32_t size;
         const uint8_t* jpeg = cam.get_latest_jpeg(&size);
         if (jpeg && size > 0) {
-            // 先拷贝到本地，避免读取期间被覆盖
             uint8_t* local_buf = (uint8_t*)malloc(size);
             if (local_buf) {
                 memcpy(local_buf, jpeg, size);
