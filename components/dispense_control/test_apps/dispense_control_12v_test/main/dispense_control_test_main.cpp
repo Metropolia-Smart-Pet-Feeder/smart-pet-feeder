@@ -104,7 +104,7 @@ static void mqttTask(void*)
     }
 }
 
-// Scheduled  task. Has its own task, waits for result before updating next scheduled time
+// Scheduled task. Has its own task, waits for result before updating next scheduled time
 
 static void schedulerTask(void*)
 {

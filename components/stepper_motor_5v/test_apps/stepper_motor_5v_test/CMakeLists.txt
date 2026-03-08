@@ -1,4 +1,4 @@
-# Component test: MQTTManager connect, publish, subscribe
+# StepperMotor5V direct motor test
 cmake_minimum_required(VERSION 3.16)
 
 set(PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
@@ -12,12 +12,10 @@ configure_file(
 )
 
 set(EXTRA_COMPONENT_DIRS
-    ${PROJECT_ROOT}/components/event_bus
     ${PROJECT_ROOT}/components/common
-    ${PROJECT_ROOT}/components/dispense_control
-    ${PROJECT_ROOT}/components/stepper_motor
+    ${PROJECT_ROOT}/components/stepper_motor_5v
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-project(dispense_control_test)
+project(stepper_motor_5v_test)

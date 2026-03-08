@@ -35,7 +35,7 @@ DispenseControl::DispenseControl(std::shared_ptr<EventBus> event_bus, const Conf
       weight_sensor_(std::move(weight_sensor)), config_(config), work_queue_(nullptr),
       worker_task_handler_(nullptr)
 {
-    motor_ = std::make_shared<StepperMotor>(config_.motor_config);
+    motor_ = std::make_shared<StepperMotor5V>(config_.motor_config);
 }
 
 DispenseControl::~DispenseControl()
