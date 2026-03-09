@@ -22,7 +22,9 @@ ImageSender::ImageSender(std::shared_ptr<camera_ov2640> camera) : camera(camera)
 
     image_buffer = (uint8_t*)heap_caps_aligned_alloc(64, MAX_IMAGE + 4 + 64, MALLOC_CAP_SPIRAM);
     assert(image_buffer && "Failed to allocate image_buffer");
-    ESP_LOGI(TAG, "image_buffer addr: %p", image_buffer);
+
+    chunk_buffer = (uint8_t*)heap_caps_aligned_alloc(64, CHUNK_SIZE + 4, MALLOC_CAP_DMA);
+    assert(chunk_buffer && "Failed to allocate chunk_buffer");
 
     //SPI master config
     spi_bus_config_t bus_config = {};
@@ -31,7 +33,7 @@ ImageSender::ImageSender(std::shared_ptr<camera_ov2640> camera) : camera(camera)
     bus_config.sclk_io_num = GPIO_NUM_30;
     bus_config.quadwp_io_num = -1; 
     bus_config.quadhd_io_num = -1;
-    bus_config.max_transfer_sz = 8192;
+    bus_config.max_transfer_sz = CHUNK_SIZE + 4;
 
     ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus_config, SPI_DMA_CH_AUTO));
 
@@ -45,12 +47,23 @@ ImageSender::ImageSender(std::shared_ptr<camera_ov2640> camera) : camera(camera)
     ESP_LOGI(TAG, "ImageSender initialized as SPI master");
 }
 
+ImageSender::~ImageSender(){
+    if(image_buffer){
+        heap_caps_free(image_buffer);
+        image_buffer = nullptr;
+    }
+    if(chunk_buffer){
+        heap_caps_free(chunk_buffer);
+        chunk_buffer = nullptr;
+    }
+}
+
 void ImageSender::setTestMode(bool enable){
     test_mode = enable;
 }
 
 void ImageSender::start(){
-    xTaskCreate(task_entry, "image sender", 4096, this, 5, &task_handle);
+    xTaskCreate(task_entry, "image sender", 8192, this, 5, &task_handle);
 
 }
 
@@ -66,9 +79,19 @@ bool ImageSender::load_from_camera(uint8_t* out, uint32_t* size){
     }
 
     uint32_t jpeg_size = 0;
-    const uint8_t* jpeg = camera-> get_latest_jpeg(&jpeg_size);
+    const uint8_t* jpeg = nullptr;
+
+    for(int retry = 0; retry < 20; retry++){
+        jpeg = camera->get_latest_jpeg(&jpeg_size);
+        if(jpeg && jpeg_size > 0 && jpeg_size <= MAX_IMAGE) break;
+        ESP_LOGI(TAG, "waiting for stable frame, size=%" PRIu32, jpeg_size);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        jpeg = nullptr;
+    }
+    ESP_LOGI(TAG, "stable frame, size=%" PRIu32, jpeg_size);
 
     if(!jpeg || jpeg_size == 0 || jpeg_size > MAX_IMAGE) {
+        ESP_LOGI(TAG, "rejected: MAX_IMAGE=%" PRIu32, (uint32_t)MAX_IMAGE);
         return false;
     }
     
@@ -114,30 +137,51 @@ void ImageSender::task_loop(){
         ESP_LOGI(TAG, "Image ready, size=%" PRIu32, size);
 
         gpio_set_level(READY_PIN, 1);
+        vTaskDelay(pdMS_TO_TICKS(100));
         ESP_LOGI(TAG, "READY asserted");
 
-        vTaskDelay(pdMS_TO_TICKS(3000));
-
-        ESP_LOGI(TAG, "Sending...");
-
-        memset(image_buffer + 4 + size, 0, BUFFER_SIZE - 4 - size);
-        uint32_t offset = 0;
-        while(offset < BUFFER_SIZE) {
-            uint32_t chunk = (BUFFER_SIZE - offset) < 8192 ? (BUFFER_SIZE - offset) : 8192;
-
-            spi_transaction_t send = {};
-            send.length = chunk * 8;
-            send.tx_buffer = image_buffer + offset;
-            ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &send));
-
-            offset += chunk;
-        }
+        spi_transaction_t header = {};
+        header.length = 4 * 8;
+        header.tx_buffer = image_buffer;
+        ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &header));
 
         gpio_set_level(READY_PIN, 0);
-        ESP_LOGI(TAG, "Image sent(%" PRIu32 " bytes in %" PRIu32 " chunks", size, (BUFFER_SIZE + 8191) / 8192);
+        ESP_LOGI(TAG, "Header sent");
 
         while(gpio_get_level(REQUEST_PIN) == 1){
             vTaskDelay(pdMS_TO_TICKS(10));
         }
+
+        uint32_t bytes_sent = 0;
+        while (bytes_sent < size){
+            while(gpio_get_level(REQUEST_PIN) == 0){
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+            uint32_t chunk_data_size = size - bytes_sent;
+            if(chunk_data_size > CHUNK_SIZE) {
+                chunk_data_size = CHUNK_SIZE;
+            }
+
+            *((uint32_t*)chunk_buffer) = chunk_data_size;
+            memcpy(chunk_buffer + 4, image_buffer + 4 + bytes_sent, chunk_data_size);
+            ESP_LOGI(TAG, "Sending chunk: offset=%" PRIu32 " size=%" PRIu32, bytes_sent, chunk_data_size);
+
+            gpio_set_level(READY_PIN, 1);
+            vTaskDelay(pdMS_TO_TICKS(50));
+
+            spi_transaction_t transfer = {};
+            transfer.length = (4 + chunk_data_size) * 8;
+            transfer.tx_buffer = chunk_buffer;
+            ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &transfer));
+
+            gpio_set_level(READY_PIN, 0);
+            bytes_sent += chunk_data_size;
+            ESP_LOGI(TAG, "Chunk sent: %" PRIu32 "/%" PRIu32, bytes_sent, size);
+
+            while(gpio_get_level(REQUEST_PIN) == 1){
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+        }
+        ESP_LOGI(TAG, "Image sent(%" PRIu32 " bytes in %" PRIu32 " chunks", size, (BUFFER_SIZE + 8191) / 8192);
     }
 }
