@@ -27,6 +27,14 @@ private:
     // WiFi state
     bool is_wifi_connected{false};
     char wifi_ssid[32]{0};
+
+    // Last feed state
+    uint32_t last_feed_ms{0};
+    uint8_t last_feed_portions{0};
+
+    // Pending state for async UI updates
+    int pending_food_level{0};
+    char pending_device_name[33]{0};
     
     // Screens
     lv_obj_t* main_screen{nullptr};
@@ -70,6 +78,15 @@ private:
     static void onWiFiConnectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void onWiFiDisconnectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void onProvisioningStartedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onFeedCompletedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onFoodLevelChangedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+    static void onLastFedTimer(lv_timer_t* timer);
+
+    // Async UI update callbacks (run inside LVGL task)
+    static void updateFeedCompletedUI(void* arg);
+    static void updateFoodLevelUI(void* arg);
+    static void updateWiFiUI(void* arg);
+    static void updateProvisioningUI(void* arg);
 
 
 };

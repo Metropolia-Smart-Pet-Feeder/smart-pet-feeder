@@ -14,6 +14,7 @@ extern "C" void app_main(void)
     StepperMotor::Config motor_config = {
         .step_pin = BoardConfig::MOTOR_STEP,
         .dir_pin = BoardConfig::MOTOR_DIR,
+        .sleep_pin = BoardConfig::MOTOR_SLEEP,
         .steps_per_rev = 400,   // roughly 400 steps per revolution (half step)
         .rmt_resolution_hz = 1000000,   // 1MHz RMT clock resolution
     };
@@ -41,7 +42,9 @@ extern "C" void app_main(void)
 
         // 1. turn
         ESP_LOGI(TAG, "Rotating clockwise (%lu steps)...", STEPS_PER_TEST);
+        motor.wake();
         ret = motor.move(STEPS_PER_TEST, DIR_CLOCKWISE, TEST_RPM);
+        motor.sleep();
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Clockwise rotation failed: %s", esp_err_to_name(ret));
             break;
@@ -53,7 +56,9 @@ extern "C" void app_main(void)
 
         // 3. turn the other way
         ESP_LOGI(TAG, "Rotating counter-clockwise (%lu steps)...", STEPS_PER_TEST);
+        motor.wake();
         ret = motor.move(STEPS_PER_TEST, DIR_COUNTERCLOCKWISE, TEST_RPM);
+        motor.sleep();
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Counter-clockwise rotation failed: %s", esp_err_to_name(ret));
             break;

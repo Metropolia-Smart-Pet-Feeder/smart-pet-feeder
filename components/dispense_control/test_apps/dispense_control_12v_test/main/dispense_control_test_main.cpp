@@ -104,7 +104,7 @@ static void mqttTask(void*)
     }
 }
 
-// Scheduled  task. Has its own task, waits for result before updating next scheduled time
+// Scheduled task. Has its own task, waits for result before updating next scheduled time
 
 static void schedulerTask(void*)
 {
@@ -177,6 +177,7 @@ extern "C" void app_main()
         .motor_config = {
             .step_pin = BoardConfig::MOTOR_STEP,
             .dir_pin = BoardConfig::MOTOR_DIR,
+            .sleep_pin = BoardConfig::MOTOR_SLEEP,
             .steps_per_rev = 400,
             .rmt_resolution_hz = 1000000
         }

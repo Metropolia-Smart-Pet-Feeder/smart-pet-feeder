@@ -15,16 +15,13 @@
 #include "DispenseControl.h"
 #include "RC522.h"
 #include "food_container.h"
-#include "motion_detection.h"  
+#include "motion_detection.h"
+#include "Scheduler.h"
+#include "BowlScale.h"
 #include <memory>
 
 static const char* TAG = "main";
 
-static void onFeedRequest(void* arg, esp_event_base_t base, int32_t id, void* data)
-{
-    auto* request = static_cast<feed_request_t*>(data);
-    ESP_LOGI(TAG, "Feed request received: %d portions, source=%d", request->portions, request->source);
-}
 
 extern "C" void app_main()
 {
@@ -48,8 +45,8 @@ extern "C" void app_main()
     ESP_LOGI(TAG, "EventBus initialized");
     
     // Initialize WiFiManager first (we need device_id for MQTT config)
-    auto wifi_manager = std::make_shared<WiFiManager>(event_bus);
-    if (!wifi_manager->init()) {
+    WiFiManager wifi_manager(event_bus);
+    if (!wifi_manager.init()) {
         ESP_LOGE(TAG, "Failed to initialize WiFiManager!");
         return;
     }
@@ -58,30 +55,73 @@ extern "C" void app_main()
     // mqtt config
     MQTTManager::Config mqtt_config = {
         .broker_uri = "mqtt://104.168.122.188:1883",
-        .client_id = wifi_manager->getDeviceId(),
+        .client_id = wifi_manager.getDeviceId(),
         .username = "petfeeder_admin",
         .password = "admin",
-        .device_id = wifi_manager->getDeviceId()
+        .device_id = wifi_manager.getDeviceId()
     };
 
     // Initialize MQTT Manager
-    auto mqtt_manager = std::make_shared<MQTTManager>(event_bus, mqtt_config);
-    if (!mqtt_manager->init()) {
+    MQTTManager mqtt_manager(event_bus, mqtt_config);
+    if (!mqtt_manager.init()) {
         ESP_LOGE(TAG, "Failed to initialize MQTT Manager!");
         return;
     }
     ESP_LOGI(TAG, "MQTT Manager initialized");
 
-    event_bus->subscribe(EVENT_FEED_REQUEST, onFeedRequest, nullptr);
-    
-    
+    // Initialize Scheduler
+    Scheduler scheduler(event_bus);
+    scheduler.init();
+    ESP_LOGI(TAG, "Scheduler initialized");
+
+    // Old 12V motor
+    // // Initialize DispenseControl
+    // DispenseControl::Config dispense_config = {
+    //     .default_portions       = 1,
+    //     .steps_per_portion      = 100,
+    //     .motor_rpm              = 20,
+    //     .operation_timeout_ms   = 10000,
+    //     .portion_delay_ms       = 1000,
+    //     .min_food_level_percent = 0,
+    //     .motor_config = {
+    //         .step_pin           = BoardConfig::MOTOR_STEP,
+    //         .dir_pin            = BoardConfig::MOTOR_DIR,
+    //         .sleep_pin          = BoardConfig::MOTOR_SLEEP,
+    //         .steps_per_rev      = 400,
+    //         .rmt_resolution_hz  = 1000000
+    //     }
+    // };
+    // DispenseControl dispense(event_bus, dispense_config);
+    // ESP_ERROR_CHECK(dispense.init());
+    // ESP_LOGI(TAG, "DispenseControl initialized");
+
+    // New 5V motor
+    DispenseControl::Config dispense_config = {
+        .default_portions       = 1,
+        .steps_per_portion      = 512,
+        .motor_rpm              = 15,
+        .operation_timeout_ms   = 10000,
+        .portion_delay_ms       = 1000,
+        .min_food_level_percent = 0,
+        .motor_config = {
+            .in1_pin       = BoardConfig::STEPPER_IN1,
+            .in2_pin       = BoardConfig::STEPPER_IN2,
+            .in3_pin       = BoardConfig::STEPPER_IN3,
+            .in4_pin       = BoardConfig::STEPPER_IN4,
+            .steps_per_rev = 4096
+        }
+    };
+    auto dispense = std::make_shared<DispenseControl>(event_bus, dispense_config);
+    ESP_ERROR_CHECK(dispense->init());
+    ESP_LOGI(TAG, "DispenseControl initialized");
+
     // Create and initialize SPI bus for display
     auto spi_bus = std::make_shared<SPIBus>(
         SPI3_HOST,
         BoardConfig::LCD_MOSI,
         BoardConfig::LCD_MISO,
         BoardConfig::LCD_SCLK,
-        240 * 320 * 2 + 8
+        BoardConfig::LCD_WIDTH * BoardConfig::LCD_HEIGHT * 2 + 8
     );
     ESP_ERROR_CHECK(spi_bus->init());
     ESP_LOGI(TAG, "SPI bus initialized");
@@ -107,24 +147,25 @@ extern "C" void app_main()
         .pixel_clock_hz = 10 * 1000 * 1000,
         .queue_depth = 10,
         .mirror_x = true,
-        .mirror_y = false,
+        .mirror_y = true,
+        .swap_xy = true,
         .invert_colors = true
     };
     auto display = std::make_shared<Display>(spi_bus, display_config);
     ESP_ERROR_CHECK(display->init());
     ESP_LOGI(TAG, "Display initialized");
-    
+
     // Initialize touch driver
     TouchDriver::Config touch_config = {
         .int_pin = BoardConfig::TOUCH_INT,
         .rst_pin = BoardConfig::TOUCH_RST,
         .device_addr = 0x38,
         .clk_hz = 100000,
-        .max_x = BoardConfig::LCD_WIDTH,
-        .max_y = BoardConfig::LCD_HEIGHT,
-        .swap_xy = false,
+        .max_x = BoardConfig::LCD_HEIGHT,   // physical touch width (portrait: 240)
+        .max_y = BoardConfig::LCD_WIDTH,    // physical touch height (portrait: 320)
+        .swap_xy = true,
         .mirror_x = false,
-        .mirror_y = false
+        .mirror_y = true
     };
     auto touch = std::make_shared<TouchDriver>(i2c_bus, touch_config);
     ESP_ERROR_CHECK(touch->init());
@@ -143,15 +184,15 @@ extern "C" void app_main()
     };
     auto lvgl = std::make_shared<LVGLManager>(display, touch, lvgl_config);
     
-    // Initialize RFID 
-    auto rfid = std::make_shared<RC522>(spi_bus, BoardConfig::RFID_CS, BoardConfig::RFID_RST, event_bus);
-    ESP_ERROR_CHECK(rfid->init());
-    rfid->startTask();
+    // Initialize RFID
+    RC522 rfid(spi_bus, BoardConfig::RFID_CS, BoardConfig::RFID_RST, event_bus);
+    ESP_ERROR_CHECK(rfid.init());
+    rfid.startTask();
     ESP_LOGI(TAG, "RFID reader initialized and task started");
 
     // Initialize food container monitoring
-    auto food_monitor = std::make_shared<FoodLevelMonitor>(BoardConfig::IR_FOOD_LEVEL_25, BoardConfig::IR_FOOD_LEVEL_50, BoardConfig::IR_FOOD_LEVEL_75, event_bus);
-    food_monitor->start_monitoring();
+    FoodLevelMonitor food_monitor(BoardConfig::IR_FOOD_LEVEL_25, BoardConfig::IR_FOOD_LEVEL_50, BoardConfig::IR_FOOD_LEVEL_75, event_bus);
+    food_monitor.start_monitoring();
 
     //Initialize ImageReceiver needed in MotionDetector
     auto image_receiver = std::make_shared<ImageReceiver>();
@@ -159,15 +200,26 @@ extern "C" void app_main()
     // Initialize motion detection
     MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus, image_receiver, wifi_manager.getDeviceId());
     motion_detector.start_monitoring();
+    MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus);
+    motion_detector.start_monitoring();
+
+    // Initialize bowl scale
+    BowlScale bowl_scale(
+        BoardConfig::SCALE_DOUT, BoardConfig::SCALE_SCK,
+        event_bus, BoardConfig::SCALE_FACTOR, BoardConfig::SCALE_THRESHOLD_G
+    );
 
     // Create UI with EventBus
     auto ui = std::make_shared<UI>(lvgl, event_bus);
     lvgl->setUIBuilder([ui]() { ui->build(); });
-    
+
     // Initialize and start LVGL
     ESP_ERROR_CHECK(lvgl->init());
     ESP_ERROR_CHECK(lvgl->start());
-    
+
+    bowl_scale.start();
+    ESP_LOGI(TAG, "Bowl scale initialized");
+
     ESP_LOGI(TAG, "Application running");
     
     while (1) {

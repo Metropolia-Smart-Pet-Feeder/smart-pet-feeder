@@ -97,7 +97,7 @@
  */
 
 #include "EventBus.h"
-#include "StepperMotor.h"
+#include "StepperMotor5V.h"
 #include "Types.h"
 #include "esp_err.h"
 #include "freertos/queue.h"
@@ -121,7 +121,7 @@ class DispenseControl
         uint32_t operation_timeout_ms; // the timeout for motor operation, in case of motor stuck
         uint32_t portion_delay_ms;     // delay between portions to allow food to drop
         uint8_t min_food_level_percent;
-        StepperMotor::Config motor_config;
+        StepperMotor5V::Config motor_config;
     };
 
     DispenseControl(std::shared_ptr<EventBus> event_bus, const Config& config,
@@ -134,7 +134,7 @@ class DispenseControl
 
   private:
     std::shared_ptr<EventBus> event_bus_;
-    std::shared_ptr<StepperMotor> motor_;
+    std::shared_ptr<StepperMotor5V> motor_;
     std::shared_ptr<FoodLevelSensor> food_level_sensor_;
     std::shared_ptr<WeightSensor> weight_sensor_;
     Config config_;

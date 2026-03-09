@@ -42,6 +42,7 @@ enum {
     EVENT_RFID_REMOVED,
 
     // weight sensor event
+    EVENT_FOOD_EATEN,
 
     // Schedule events
     EVENT_SCHEDULE_UPDATE,

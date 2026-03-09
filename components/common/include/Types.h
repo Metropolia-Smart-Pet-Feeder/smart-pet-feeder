@@ -57,23 +57,13 @@ struct schedule_list_t
 {
     uint8_t count;
     schedule_data_t schedules[MAX_SCHEDULES];
+    int16_t utc_offset_minutes;
 };
 
 struct visit_data_t
 {
     uint32_t timestamp;
     char name[32];
-};
-
-struct eating_data_t
-{
-    uint32_t timestamp;
-    uint8_t portions;
-};
-
-struct food_level_data_t
-{
-    uint8_t percentage;
 };
 
 struct wifi_event_data_t

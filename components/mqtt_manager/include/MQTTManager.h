@@ -46,7 +46,8 @@ private:
     static void onCatApproachedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void onCatLeftEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void onRfidDetectedEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
-    
+    static void onFoodEatenEvent(void* arg, esp_event_base_t base, int32_t id, void* data);
+
     static const char* TAG;
 };
 

@@ -15,6 +15,9 @@ StepperMotor::StepperMotor(const Config &config) : config_(config) {}
 esp_err_t StepperMotor::init() {
     gpio_set_direction(config_.dir_pin, GPIO_MODE_OUTPUT);
 
+    gpio_set_direction(config_.sleep_pin, GPIO_MODE_OUTPUT);
+    gpio_set_level(config_.sleep_pin, 0);
+
     // create rmt tx channel for step pin
     rmt_tx_channel_config_t tx_cfg = {
         .gpio_num            = config_.step_pin,
@@ -99,6 +102,9 @@ esp_err_t StepperMotor::move(uint32_t steps, uint8_t direction, uint32_t rpm, ui
 uint32_t StepperMotor::degreesToSteps(float degrees) const {
     return static_cast<uint32_t>(degrees / 360.0f * static_cast<float>(config_.steps_per_rev));
 }
+
+void StepperMotor::wake()  { gpio_set_level(config_.sleep_pin, 1); }
+void StepperMotor::sleep() { gpio_set_level(config_.sleep_pin, 0); }
 
 uint32_t StepperMotor::calcHalfPeriodTicks(uint32_t rpm) const {
     // rpm * steps_per_rev / 60

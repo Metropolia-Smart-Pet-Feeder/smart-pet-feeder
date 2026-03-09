@@ -10,6 +10,7 @@ idf_component_register(
         protocomm           
         bt
         esp_netif
-        esp_event           
+        esp_event
         event_bus
+        lwip
 )

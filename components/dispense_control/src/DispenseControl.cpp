@@ -35,7 +35,7 @@ DispenseControl::DispenseControl(std::shared_ptr<EventBus> event_bus, const Conf
       weight_sensor_(std::move(weight_sensor)), config_(config), work_queue_(nullptr),
       worker_task_handler_(nullptr)
 {
-    motor_ = std::make_shared<StepperMotor>(config_.motor_config);
+    motor_ = std::make_shared<StepperMotor5V>(config_.motor_config);
 }
 
 DispenseControl::~DispenseControl()
@@ -222,6 +222,7 @@ esp_err_t DispenseControl::executeDispense(uint8_t portions)
 {
     ESP_LOGI(TAG, "Dispensing %" PRIu32 " portions", static_cast<uint32_t>(portions));
 
+    motor_->wake();
     for (int i = 0; i < portions; i++)
     {
         esp_err_t ret = motor_->move(config_.steps_per_portion, DIRECTION_DISPENSE,
@@ -229,11 +230,13 @@ esp_err_t DispenseControl::executeDispense(uint8_t portions)
         if (ret != ESP_OK)
         {
             ESP_LOGE(TAG, "Motor movement failed: %s", esp_err_to_name(ret));
+            motor_->sleep();
             return ret;
         }
 
         vTaskDelay(pdMS_TO_TICKS(config_.portion_delay_ms));
     }
+    motor_->sleep();
 
     return ESP_OK;
 }
@@ -293,6 +296,7 @@ void DispenseControl::executeCalibrate()
 
     // TODO: weight_sensor_->tare()
 
+    motor_->wake();
     for (int i = 0; i < CALIBRATION_PORTIONS; i++)
     {
         esp_err_t ret = motor_->move(config_.steps_per_portion, DIRECTION_DISPENSE,
@@ -300,11 +304,13 @@ void DispenseControl::executeCalibrate()
         if (ret != ESP_OK)
         {
             ESP_LOGE(TAG, "Motor movement failed during calibration: %s", esp_err_to_name(ret));
+            motor_->sleep();
             event_bus_->publish(EVENT_CALIBRATION_FAILED);
             return;
         }
         vTaskDelay(pdMS_TO_TICKS(config_.portion_delay_ms));
     }
+    motor_->sleep();
 
     ESP_LOGI(TAG, "Waiting for food to settle...");
     vTaskDelay(pdMS_TO_TICKS(config_.portion_delay_ms));

@@ -31,13 +31,21 @@ namespace BoardConfig {
     constexpr gpio_num_t IR_MOTION_RIGHT = GPIO_NUM_6;
 
     // weight sensor pins
-    constexpr gpio_num_t SCALE_1 = GPIO_NUM_40;
-    constexpr gpio_num_t SCALE_2 = GPIO_NUM_39;
+    constexpr gpio_num_t SCALE_DOUT     = GPIO_NUM_40;
+    constexpr gpio_num_t SCALE_SCK      = GPIO_NUM_39;
+    constexpr float      SCALE_FACTOR   = 110.16f;
+    constexpr float      SCALE_THRESHOLD_G = 2.0f;
 
-    // motor control pins
-    constexpr gpio_num_t MOTOR_DIR = GPIO_NUM_14;
-    constexpr gpio_num_t MOTOR_STEP = GPIO_NUM_10;
-    constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_46;
+    // motor control pins (old driver board)
+    // constexpr gpio_num_t MOTOR_SLEEP = GPIO_NUM_7;
+    // constexpr gpio_num_t MOTOR_STEP  = GPIO_NUM_10;
+    // constexpr gpio_num_t MOTOR_DIR   = GPIO_NUM_45;
+
+    // 4-wire stepper motor pins
+    constexpr gpio_num_t STEPPER_IN1 = GPIO_NUM_7;
+    constexpr gpio_num_t STEPPER_IN2 = GPIO_NUM_10;
+    constexpr gpio_num_t STEPPER_IN3 = GPIO_NUM_14;
+    constexpr gpio_num_t STEPPER_IN4 = GPIO_NUM_45;
 
     // SPI to P4 pins
     constexpr gpio_num_t P4_SCLK = GPIO_NUM_12;
@@ -49,9 +57,8 @@ namespace BoardConfig {
 
     // 
 
-    // Display Settings
-    constexpr int LCD_WIDTH = 240;
-    constexpr int LCD_HEIGHT = 320;
+    constexpr int LCD_WIDTH = 320;
+    constexpr int LCD_HEIGHT = 240;
     constexpr size_t LCD_MAX_TRANSFER_SIZE = (LCD_WIDTH * LCD_HEIGHT * sizeof(uint16_t));
     constexpr int LCD_PIXEL_CLOCK_HZ = 10 * 1000 * 1000;
     constexpr int LCD_CMD_BITS = 8;
