@@ -153,9 +153,12 @@ extern "C" void app_main()
     auto food_monitor = std::make_shared<FoodLevelMonitor>(BoardConfig::IR_FOOD_LEVEL_25, BoardConfig::IR_FOOD_LEVEL_50, BoardConfig::IR_FOOD_LEVEL_75, event_bus);
     food_monitor->start_monitoring();
 
+    //Initialize ImageReceiver needed in MotionDetector
+    auto image_receiver = std::make_shared<ImageReceiver>();
+
     // Initialize motion detection
-    auto motion_detector = std::make_shared<MotionDetector>(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus);
-    motion_detector->start_monitoring();
+    MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus, image_receiver, wifi_manager.getDeviceId());
+    motion_detector.start_monitoring();
 
     // Create UI with EventBus
     auto ui = std::make_shared<UI>(lvgl, event_bus);
@@ -170,4 +173,5 @@ extern "C" void app_main()
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+
 }
