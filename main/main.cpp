@@ -200,9 +200,7 @@ extern "C" void app_main()
     // Initialize motion detection
     MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus, image_receiver, wifi_manager.getDeviceId());
     motion_detector.start_monitoring();
-    MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus);
-    motion_detector.start_monitoring();
-
+    
     // Initialize bowl scale
     BowlScale bowl_scale(
         BoardConfig::SCALE_DOUT, BoardConfig::SCALE_SCK,
