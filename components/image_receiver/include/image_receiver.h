@@ -21,12 +21,14 @@ class ImageReceiver {
     private:
         void init();
         void init_http(const char* device_id);
-        esp_err_t get_image(uint32_t* size_out);
+        bool wait_for_ready(int timeout_ms);
 
         SemaphoreHandle_t spi_mutex = nullptr;
         uint8_t* frame_buffer = nullptr;;
         esp_http_client_handle_t http_client = nullptr;
 
-        static constexpr uint32_t MAX_JPEG_SIZE = 40000;
-        static constexpr uint32_t BUFFER_SIZE = MAX_JPEG_SIZE + 4 + 64;
+        static constexpr uint32_t MAX_JPEG_SIZE = 200000;
+        static constexpr uint32_t CHUNK_DATA = 8188;
+        static constexpr uint32_t BUFFER_SIZE = CHUNK_DATA + 4;
+
 };
