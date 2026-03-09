@@ -13,13 +13,13 @@
 class ImageSender {
     public:
         ImageSender(std::shared_ptr<camera_ov2640> camera);
+        ~ImageSender();
         void start();
         void setTestMode(bool enable);
 
     private:
         static void task_entry(void* arg);
         void task_loop();
-       
         bool load_from_camera(uint8_t* out, uint32_t* size);
         bool load_from_file(uint8_t* out, uint32_t* size);
 
@@ -28,7 +28,10 @@ class ImageSender {
         TaskHandle_t task_handle = nullptr;
         bool test_mode = false;
 
-        uint8_t* image_buffer;
-        static constexpr uint32_t MAX_IMAGE = 40000;
+        uint8_t* image_buffer = nullptr;
+        uint8_t* chunk_buffer = nullptr;
+        static constexpr uint32_t MAX_IMAGE = 200000;
+        static constexpr uint32_t CHUNK_SIZE = 8188;
         static constexpr uint32_t BUFFER_SIZE = MAX_IMAGE + 4 + 64;
 };
+
