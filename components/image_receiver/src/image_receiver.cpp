@@ -59,65 +59,10 @@ void ImageReceiver::init() {
     ESP_LOGI(TAG, "End of init CS=%d", gpio_get_level(BoardConfig::P4_CS));
 }
 
-esp_err_t ImageReceiver::get_image(uint32_t* size_out){
-    *size_out = 0;
-
-    memset(frame_buffer, 0, BUFFER_SIZE);
-    spi_slave_transaction_t receive = {};
-    receive.length = BUFFER_SIZE * 8;
-    receive.rx_buffer = frame_buffer;
-    ESP_ERROR_CHECK(spi_slave_queue_trans(SPI2_HOST, &receive, portMAX_DELAY));
-    ESP_LOGI(TAG, "Slave queued");
-
-    gpio_set_level(BoardConfig::P4_REQUEST, 1);
-    ESP_LOGI(TAG, "REQUEST asserted");
-
-    int timeout = 3000;
-    while(gpio_get_level(BoardConfig::P4_READY) == 0 && timeout-- > 0){
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    if(timeout <= 0){
-        ESP_LOGW(TAG, "READY timeout");
-        gpio_set_level(BoardConfig::P4_REQUEST, 0);
-        spi_slave_transaction_t* dummy = nullptr;
-        spi_slave_get_trans_result(SPI2_HOST, &dummy, pdMS_TO_TICKS(100));
-        return ESP_ERR_TIMEOUT;
-    }
-
-    ESP_LOGI(TAG, "Ready to recieve");
-
-    spi_slave_transaction_t* result = nullptr;
-    ESP_ERROR_CHECK(spi_slave_get_trans_result(SPI2_HOST, &result, portMAX_DELAY));
-    ESP_LOGI(TAG, "trans_len = %" PRIu32 " bits", (uint32_t)receive.trans_len);
-    
-    if(result->trans_len < 32){
-        ESP_LOGW(TAG, "Spurious transaction, requeueing...");
-        memset(frame_buffer, 0, BUFFER_SIZE);
-        receive.trans_len = 0;
-        ESP_ERROR_CHECK(spi_slave_queue_trans(SPI2_HOST, &receive, portMAX_DELAY));
-        result = nullptr;
-        ESP_ERROR_CHECK(spi_slave_get_trans_result(SPI2_HOST, &result, portMAX_DELAY));
-        ESP_LOGI(TAG, "Real trans_len=%" PRIu32 " bits",(uint32_t)result->trans_len);
-    }
-    
-    gpio_set_level(BoardConfig::P4_REQUEST, 0);
-
-    uint32_t received_size = *((uint32_t*)frame_buffer);
-    ESP_LOGI(TAG, "Received size=%"PRIu32, received_size);
-
-    if(received_size == 0 || received_size > MAX_JPEG_SIZE) {
-        ESP_LOGE(TAG, "Invalid size_ %" PRIu32, received_size);
-        return ESP_ERR_INVALID_SIZE;
-    }
-
-    *size_out = received_size;
-    return ESP_OK;
-}
-
 void ImageReceiver::init_http(const char* device_id){
-    const char* url = "http://104.168.122.188:3000/api/photos/upload/testfeeder"; //Test url
-    //char url[128];
-    //snprintf(url, sizeof(url), "http://104.168.122.188:3000/api/photos/upload/%s", device_id);
+    //const char* url = "http://104.168.122.188:3000/api/photos/upload/testfeeder"; //Test url
+    char url[128];
+    snprintf(url, sizeof(url), "http://104.168.122.188:3000/api/photos/upload/%s", device_id);
 
     esp_http_client_config_t  config= {};
     config.url = url;
@@ -126,83 +71,131 @@ void ImageReceiver::init_http(const char* device_id){
 
     http_client = esp_http_client_init(&config);
     assert(http_client && "Failed to init HTTP client");
-    //esp_http_client_set_header(http_client, "Content-Type", "image/jpeg");
     ESP_LOGI(TAG, "HTTP client initialized for %s", url);
+}
+
+bool ImageReceiver::wait_for_ready(int timeout_ms){
+    int ticks = timeout_ms/10;
+    while(gpio_get_level(BoardConfig::P4_READY) == 0 && ticks-- > 0){
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    return ticks > 0;
 }
 
 esp_err_t ImageReceiver::post_image(const char* device_id){
     ESP_LOGI(TAG, "post_image called");
-    uint32_t jpeg_size = 0;
-
     if(!http_client){
         init_http(device_id);
     }
 
     xSemaphoreTake(spi_mutex, portMAX_DELAY);
-    esp_err_t ret = get_image(&jpeg_size);
-    xSemaphoreGive(spi_mutex);
 
-    if(ret != ESP_OK){
-        ESP_LOGE(TAG, "fetching image failed: %s", esp_err_to_name(ret));
-        return ret;
+    // Receive header with full size info
+    memset(frame_buffer, 0, BUFFER_SIZE);
+    spi_slave_transaction_t trans = {};
+    trans.length = 4 * 8;
+    trans.rx_buffer = frame_buffer;
+
+    ESP_ERROR_CHECK(spi_slave_queue_trans(SPI2_HOST, &trans, portMAX_DELAY));
+    gpio_set_level(BoardConfig::P4_REQUEST, 1);
+
+    if(!wait_for_ready(5000)) {
+        ESP_LOGW(TAG, "READY timeout waiting for header");
+        gpio_set_level(BoardConfig::P4_REQUEST, 0);
+        spi_slave_transaction_t* dummy = nullptr;
+        spi_slave_get_trans_result(SPI2_HOST, &dummy, pdMS_TO_TICKS(100));
+        xSemaphoreGive(spi_mutex);
+        return ESP_ERR_TIMEOUT;
     }
 
-    ESP_LOGI(TAG, "Posting to url");
+    spi_slave_transaction_t* result = nullptr;
+    ESP_ERROR_CHECK(spi_slave_get_trans_result(SPI2_HOST, &result, portMAX_DELAY));
+    gpio_set_level(BoardConfig::P4_REQUEST, 0);
 
-    /*esp_http_client_set_post_field(http_client, (const char*)(frame_buffer + 4), jpeg_size);
+    uint32_t total_size = *((uint32_t*)frame_buffer);
+    ESP_LOGI(TAG, "Total JPEG size: %" PRIu32, total_size);
 
-    ret = esp_http_client_perform(http_client);
-    if(ret == ESP_OK) {
-        int status = esp_http_client_get_status_code(http_client);
-        ESP_LOGI(TAG, "POST complete, HTTP status: %d", status);
-        ret = (status == 200 || status == 201) ? ESP_OK : ESP_FAIL;
-    } else {
-        ESP_LOGE(TAG, "HTTP POST failed: %s", esp_err_to_name(ret));
+    if (total_size == 0 || total_size > MAX_JPEG_SIZE) {
+        ESP_LOGE(TAG, "Invalid total size %" PRIu32, total_size);
+        xSemaphoreGive(spi_mutex);
+        return ESP_ERR_INVALID_SIZE;
     }
-    return ret;*/
 
+    // Open HTTP and send header
     const char* boundary = "ESP32Boundary";
     char header[256];
     int header_len = snprintf(header, sizeof(header),
         "--%s\r\n"
         "Content-Disposition: form-data; name=\"photo\"; filename=\"image.jpg\"\r\n"
-        "Content-Type: image/jpeg\r\n"
-        "\r\n",
+        "Content-Type: image/jpeg\r\n\r\n",
         boundary);
 
     const char* footer = "\r\n--ESP32Boundary--\r\n";
     int footer_len = strlen(footer);
+    int total_http_len = header_len + (int)total_size + footer_len;
 
-    int total_len = header_len + jpeg_size + footer_len;
-
-    // Allocate full multipart body
     char content_type[64];
     snprintf(content_type, sizeof(content_type), "multipart/form-data; boundary=%s", boundary);
     esp_http_client_set_header(http_client, "Content-Type", content_type);
-    esp_http_client_set_header(http_client, "Content-Length", std::to_string(total_len).c_str());
+    esp_http_client_set_header(http_client, "Content-Length", std::to_string(total_http_len).c_str());
 
-    // Open connection manually so we can write in chunks
-    ret = esp_http_client_open(http_client, total_len);
-    if(ret != ESP_OK){
-        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(ret));
+    esp_err_t ret = esp_http_client_open(http_client, total_http_len);
+    if(ret != ESP_OK) {
+        ESP_LOGE(TAG, "HTTP opening failed: %s", esp_err_to_name(ret));
+        xSemaphoreGive(spi_mutex);
         return ret;
     }
-    // Write multipart header
     esp_http_client_write(http_client, header, header_len);
 
-    // Write JPEG data directly from frame_buffer — no extra allocation
-    esp_http_client_write(http_client, (const char*)(frame_buffer + 4), jpeg_size);
+    // Loop of SPI receiving and HTTP writing
+    uint32_t bytes_received = 0;
 
-    // Write multipart footer
+    while (bytes_received < total_size) {
+        memset(frame_buffer, 0, BUFFER_SIZE);
+        trans = {};
+        trans.length = BUFFER_SIZE * 8;
+        trans.rx_buffer = frame_buffer;
+
+        ESP_ERROR_CHECK(spi_slave_queue_trans(SPI2_HOST, &trans, portMAX_DELAY));
+
+        // Tell P4 we are ready for next chunk
+        gpio_set_level(BoardConfig::P4_REQUEST, 1);
+
+        if(!wait_for_ready(3000)){
+            ESP_LOGW(TAG, "READY timeout waiting for header");
+            gpio_set_level(BoardConfig::P4_REQUEST, 0);
+            spi_slave_transaction_t* dummy = nullptr;
+            spi_slave_get_trans_result(SPI2_HOST, &dummy, pdMS_TO_TICKS(100));
+            xSemaphoreGive(spi_mutex);
+            return ESP_ERR_TIMEOUT;
+        }
+        result = nullptr;
+        ESP_ERROR_CHECK(spi_slave_get_trans_result(SPI2_HOST, &result, portMAX_DELAY));
+        gpio_set_level(BoardConfig::P4_REQUEST, 0);
+
+        uint32_t chunk_size = *((uint32_t*)frame_buffer);
+        if(chunk_size == 0 || chunk_size > CHUNK_DATA) {
+            ESP_LOGE(TAG, "Bad chunk size: %" PRIu32, chunk_size);
+            esp_http_client_close(http_client);
+            xSemaphoreGive(spi_mutex);
+            return ESP_ERR_INVALID_SIZE;
+        }
+
+        ESP_LOGI(TAG, "Chunk: %" PRIu32 " bytes (total so far: %" PRIu32 "/%" PRIu32 ")",
+            chunk_size, bytes_received + chunk_size, total_size);
+
+        esp_http_client_write(http_client, (const char*)(frame_buffer + 4), chunk_size);
+        bytes_received += chunk_size;
+    }
+
+    // Finish HTTP
+
     esp_http_client_write(http_client, footer, footer_len);
-
-    // Fetch response
     int content_length = esp_http_client_fetch_headers(http_client);
     int status = esp_http_client_get_status_code(http_client);
-    ESP_LOGI(TAG, "POST complete, HTTP status: %d, content_length: %d", status, content_length);
-
+    ESP_LOGI(TAG, "POST done, HTTP %d, content_length: %d", status, content_length);
     esp_http_client_close(http_client);
 
-    return (status == 200 || status == 201) ? ESP_OK : ESP_FAIL;
-
+    xSemaphoreGive(spi_mutex);
+    return(status == 200 || status == 201) ? ESP_OK : ESP_FAIL;
 }
