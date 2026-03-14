@@ -194,10 +194,13 @@ extern "C" void app_main()
     FoodLevelMonitor food_monitor(BoardConfig::IR_FOOD_LEVEL_25, BoardConfig::IR_FOOD_LEVEL_50, BoardConfig::IR_FOOD_LEVEL_75, event_bus);
     food_monitor.start_monitoring();
 
-    // Initialize motion detection
-    MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus);
-    motion_detector.start_monitoring();
+    //Initialize ImageReceiver needed in MotionDetector
+    auto image_receiver = std::make_shared<ImageReceiver>();
 
+    // Initialize motion detection
+    MotionDetector motion_detector(BoardConfig::IR_MOTION_LEFT, BoardConfig::IR_MOTION_CENTER, BoardConfig::IR_MOTION_RIGHT, event_bus, image_receiver, wifi_manager.getDeviceId());
+    motion_detector.start_monitoring();
+    
     // Initialize bowl scale
     BowlScale bowl_scale(
         BoardConfig::SCALE_DOUT, BoardConfig::SCALE_SCK,
@@ -220,4 +223,5 @@ extern "C" void app_main()
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+
 }

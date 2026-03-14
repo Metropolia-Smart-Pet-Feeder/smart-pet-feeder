@@ -7,9 +7,10 @@ idf_component_register(
     INCLUDE_DIRS 
         "include"
 
-    REQUIRES 
+    REQUIRES
         event_bus
-        driver 
+        driver
         freertos
         peripherals
+        image_receiver
 )

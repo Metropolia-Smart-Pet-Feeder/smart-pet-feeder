@@ -14,6 +14,7 @@ idf_component_register(
         dispense_control
         IR_sensor
         RFID_reader
+        image_receiver
         dispense_scheduler
         bowl_scale
 )

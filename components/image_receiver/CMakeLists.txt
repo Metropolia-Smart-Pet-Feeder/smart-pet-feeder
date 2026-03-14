@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS 
+        "src/image_receiver.cpp"
+    INCLUDE_DIRS 
+        "include"
+    REQUIRES 
+        driver 
+        common
+        esp_http_client
+        wifi_manager
+        log
+)

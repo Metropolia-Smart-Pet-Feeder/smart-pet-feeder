@@ -51,9 +51,9 @@ namespace BoardConfig {
     constexpr gpio_num_t P4_SCLK = GPIO_NUM_12;
     constexpr gpio_num_t P4_MOSI = GPIO_NUM_11;
     constexpr gpio_num_t P4_MISO = GPIO_NUM_13;
-    constexpr gpio_num_t P4_EXTRA_1 = GPIO_NUM_15;
-    constexpr gpio_num_t P4_EXTRA_2 = GPIO_NUM_16;
-    constexpr gpio_num_t P4_EXTRA_3 = GPIO_NUM_3;
+    constexpr gpio_num_t P4_CS = GPIO_NUM_15;
+    constexpr gpio_num_t P4_READY = GPIO_NUM_16;
+    constexpr gpio_num_t P4_REQUEST = GPIO_NUM_3;
 
     // 
 
