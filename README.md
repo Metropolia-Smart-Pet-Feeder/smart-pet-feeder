@@ -4,7 +4,9 @@ An ESP32-S3 based automatic pet feeder with a touchscreen UI, RFID cat identific
 
 ## Introduction
 
-The system runs on an ESP32-S3 and integrates several hardware components managed by dedicated software components that communicate through a central EventBus. The device connects to WiFi using BLE provisioning on first boot and stores credentials for subsequent connections. Once online, it connects to an MQTT broker to receive remote feed commands and schedule updates, and publishes hardware events (motion, RFID, food level, food eaten) back to the server. The touchscreen provides a local UI for manual feeding, provisioning, and status display. 
+The system runs on an ESP32-S3 and integrates several hardware components managed by dedicated software components that communicate through a central EventBus. The device connects to WiFi using BLE provisioning on first boot and stores credentials for subsequent connections. Once online, it connects to an MQTT broker to receive remote feed commands and schedule updates, and publishes hardware events (motion, RFID, food level, food eaten) back to the server. The touchscreen provides a local UI for manual feeding, provisioning, and status display.
+
+The camera module runs on a separate **ESP32-P4** board and communicates with the main ESP32-S3 through SPI. Its code is maintained on the `feature/camera` branch. 
 
 ## Component Wiring
 
@@ -65,6 +67,16 @@ Typical load cell wiring:
 | IN2    | 10   |
 | IN3    | 14   |
 | IN4    | 45   |
+
+### ESP32-P4 Camera Module (SPI)
+| Signal  | ESP32-S3 GPIO |
+|---------|---------------|
+| SCLK    | 12            |
+| MOSI    | 11            |
+| MISO    | 13            |
+| CS      | 15            |
+| READY   | 16            |
+| REQUEST | 3             |
 
 ---
 
