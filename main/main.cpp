@@ -54,10 +54,10 @@ extern "C" void app_main()
 
     // mqtt config
     MQTTManager::Config mqtt_config = {
-        .broker_uri = "mqtt://104.168.122.188:1883",
+        .broker_uri = "mqtt://",
         .client_id = wifi_manager.getDeviceId(),
-        .username = "petfeeder_admin",
-        .password = "admin",
+        .username = "",
+        .password = "",
         .device_id = wifi_manager.getDeviceId()
     };
 

@@ -60,9 +60,9 @@ void ImageReceiver::init() {
 }
 
 void ImageReceiver::init_http(const char* device_id){
-    //const char* url = "http://104.168.122.188:3000/api/photos/upload/testfeeder"; //Test url
+    //const char* url = "http://"; //Test url
     char url[128];
-    snprintf(url, sizeof(url), "http://104.168.122.188:3000/api/photos/upload/%s", device_id);
+    snprintf(url, sizeof(url), "http://", device_id);
 
     esp_http_client_config_t  config= {};
     config.url = url;
